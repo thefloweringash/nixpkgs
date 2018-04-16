@@ -26,9 +26,9 @@ stdenv.mkDerivation rec {
   ];
 
   buildInputs = [
-    orc libXv pango libtheora cdparanoia libintl wayland
+    orc libXv pango libtheora cdparanoia libintl
   ]
-  ++ stdenv.lib.optional stdenv.isLinux alsaLib
+  ++ stdenv.lib.optionals stdenv.isLinux [ alsaLib wayland ]
   ++ stdenv.lib.optional (!stdenv.isDarwin) libvisual;
 
   propagatedBuildInputs = [ gstreamer ];

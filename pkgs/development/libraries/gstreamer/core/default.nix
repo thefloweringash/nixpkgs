@@ -34,7 +34,9 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     meson ninja pkgconfig gettext bison flex python3 makeWrapper gobjectIntrospection
   ];
-  buildInputs = [ libcap libunwind ] ++ stdenv.lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.CoreServices;
+  buildInputs = [ libunwind ]
+    ++ stdenv.lib.optional stdenv.isLinux libcap
+    ++ stdenv.lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.CoreServices;
 
   propagatedBuildInputs = [ glib ];
 

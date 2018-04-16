@@ -35,11 +35,11 @@ in stdenv.mkDerivation {
   ] ++ optional withGtk wrapGAppsHook;
 
   buildInputs = [
-    gettext pcre perl libpcap lua5 libssh openssl libgcrypt
+    gettext pcre perl lua5 libssh openssl libgcrypt
     libgpgerror gnutls geoip c-ares python glib zlib makeWrapper
   ] ++ optionals withQt  (with qt5; [ qtbase qtmultimedia qtsvg qttools ])
     ++ optionals withGtk [ gtk3 librsvg gsettings-desktop-schemas ]
-    ++ optionals stdenv.isLinux  [ libcap libnl ]
+    ++ optionals stdenv.isLinux  [ libpcap libcap libnl ]
     ++ optionals stdenv.isDarwin [ SystemConfiguration ApplicationServices gmp ]
     ++ optionals (withQt && stdenv.isDarwin) (with qt5; [ qtmacextras ]);
 
