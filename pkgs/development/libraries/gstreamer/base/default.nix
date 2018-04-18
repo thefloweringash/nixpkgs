@@ -21,8 +21,12 @@ stdenv.mkDerivation rec {
 
   outputs = [ "out" "dev" ];
 
+  # including meson and ninja here completely change the build
+  # homebrew uses standard ./configure && make && make install
+  # Unclear to how to pass feature options to meson
+  # and the build explodes on a path including x11
   nativeBuildInputs = [
-    pkgconfig python meson ninja gettext gobjectIntrospection
+    pkgconfig python gettext gobjectIntrospection
   ];
 
   buildInputs = [
@@ -36,6 +40,14 @@ stdenv.mkDerivation rec {
   preConfigure = ''
     patchShebangs .
   '';
+
+  # Untested
+  configureFlags = stdenv.lib.optionals stdenv.isDarwin [
+    "--without-x"
+    "--disable-x"
+    "--disable-xvideo"
+    "--disable-xshm"
+  ];
 
   enableParallelBuilding = true;
 
