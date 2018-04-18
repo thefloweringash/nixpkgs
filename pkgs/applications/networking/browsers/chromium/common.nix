@@ -6,6 +6,7 @@
 , libpng, libcap
 , xdg_utils, yasm, minizip, libwebp
 , libusb1, pciutils, nss, re2, zlib, libvpx
+, darwin
 
 , python2Packages, perl, pkgconfig
 , nspr, systemd, kerberos
@@ -84,13 +85,22 @@ let
   defaultDependencies = [
     bzip2 flac speex opusWithCustomModes
     libevent expat libjpeg snappy
-    libpng libcap
+    libpng
     xdg_utils yasm minizip libwebp
     libusb1 re2 zlib
     ffmpeg libxslt libxml2
     # harfbuzz-icu # in versions over 63 harfbuzz and freetype are being built together
                    # so we can't build with one from system and other from source
-  ];
+  ]
+  ++ optionals stdenv.isLinux [ libcap ]
+#  ++ optionals stdenv.isDarwin (with darwin; with darwin.apple_sdk.frameworks; [
+#    cctools Foundation Cocoa AppKit
+#    CoreBluetooth CoreGraphics CoreLocation CoreMedia CoreServices
+#    CoreText CoreWLAN IOBluetooth IOKit IOSurface
+#    ImageCaptureCore ImageIO GameController GLKit
+#  ])
+  ++ optionals stdenv.isDarwin (builtins.attrValues (builtins.removeAttrs darwin.apple_sdk.frameworks ["Ruby"])) ## Nix, give me everything. ...? EVERYTHING!!
+  ;
 
   # build paths and release info
   packageName = extraAttrs.packageName or extraAttrs.name;
@@ -126,16 +136,17 @@ let
     ];
 
     buildInputs = defaultDependencies ++ [
-      nspr nss systemd
-      utillinux alsaLib
+      nspr nss
+      utillinux
       bison gperf kerberos
       glib gtk2 gtk3 dbus-glib
       libXScrnSaver libXcursor libXtst libGLU_combined
-      pciutils protobuf speechd libXdamage
+      protobuf libXdamage
     ] ++ optional gnomeKeyringSupport libgnome-keyring3
       ++ optionals gnomeSupport [ gnome.GConf libgcrypt ]
       ++ optionals cupsSupport [ libgcrypt cups ]
-      ++ optional pulseSupport libpulseaudio;
+      ++ optional pulseSupport libpulseaudio
+      ++ optional stdenv.isLinux [ systemd alsaLib pciutils speechd ];
 
     patches = [
       ./patches/nix_plugin_paths_52.patch
@@ -188,6 +199,7 @@ let
           'return sandbox_binary;' \
           'return base::FilePath(GetDevelSandboxPath());'
 
+      ${optionalString stdenv.isLinux ''
       sed -i -e 's@"\(#!\)\?.*xdg-@"\1${xdg_utils}/bin/xdg-@' \
         chrome/browser/shell_integration_linux.cc
 
@@ -199,6 +211,7 @@ let
 
       sed -i -re 's/([^:])\<(isnan *\()/\1std::\2/g' \
         chrome/browser/ui/webui/engagement/site_engagement_ui.cc
+      ''}
 
       sed -i -e '/#include/ {
         i #include <algorithm>
@@ -251,7 +264,7 @@ let
       use_cups = cupsSupport;
 
       treat_warnings_as_errors = false;
-      is_clang = false;
+      is_clang = stdenv.cc.isClang;
       clang_use_chrome_plugins = false;
       remove_webcore_debug_symbols = true;
       use_gtk3 = true;
