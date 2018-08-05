@@ -16633,6 +16633,11 @@ with pkgs;
 
   fomp = callPackage ../applications/audio/fomp { };
 
+  fractal = callPackage ../applications/networking/instant-messengers/fractal {
+    inherit (gst_all_1) gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad;
+    inherit (gnome3) gtksourceview;
+  };
+
   freecad = callPackage ../applications/graphics/freecad { mpi = openmpi; };
 
   freemind = callPackage ../applications/misc/freemind { };
