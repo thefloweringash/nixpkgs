@@ -89,6 +89,26 @@ let
         "main".'';
       };
 
+      namespace = mkOption {
+        default = null;
+        type = types.nullOr types.string;
+        description = ''
+          The netns to which the wireguard is moved to after creation. A null
+          value (the default) means the default namespace. Typically used with
+          the "initialNamespace" option.
+        '';
+      };
+
+      initialNamespace = mkOption {
+        default = null;
+        type = types.nullOr types.string;
+        description = ''
+          The netns in which the wireguard device is created. A null value (the
+          default) means the default namespace. Typically used with the
+          "namespace" option.
+        '';
+      };
+
       peers = mkOption {
         default = [];
         description = "Peers linked to the interface.";
@@ -201,12 +221,21 @@ let
           RemainAfterExit = true;
         };
 
-        script = ''
+        script = let
+          initialNamespaceParam = if values.initialNamespace != null
+                                  then "-n ${values.initialNamespace}"
+                                  else "";
+          targetNamespace = if values.namespace != null
+                            then values.namespace
+                            else "1";
+        in ''
           modprobe wireguard
 
-          ${values.preSetup}
+          ip ${initialNamespaceParam} link add dev ${name} type wireguard
 
-          ip link add dev ${name} type wireguard
+          ${optionalString (values.initialNamespace != values.namespace) ''
+            ip ${initialNamespaceParam} link set ${name} netns ${targetNamespace}
+          ''}
 
           ${concatMapStringsSep "\n" (ip:
             "ip address add ${ip} dev ${name}"
