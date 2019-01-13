@@ -2508,6 +2508,7 @@ in
   };
 
   encfs = callPackage ../tools/filesystems/encfs {
+    fuse = if stdenv.isDarwin then osxfuse else fuse;
     tinyxml2 = tinyxml-2;
   };
 
