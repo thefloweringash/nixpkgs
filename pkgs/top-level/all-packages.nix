@@ -2504,6 +2504,7 @@ in
   enblend-enfuse = callPackage ../tools/graphics/enblend-enfuse { };
 
   cryfs = callPackage ../tools/filesystems/cryfs {
+    fuse = if stdenv.isDarwin then osxfuse else fuse;
     spdlog = spdlog_0;
   };
 

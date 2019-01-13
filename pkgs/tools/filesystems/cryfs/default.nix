@@ -74,6 +74,6 @@ stdenv.mkDerivation rec {
     homepage    = https://www.cryfs.org;
     license     = licenses.lgpl3;
     maintainers = with maintainers; [ peterhoeg ];
-    platforms   = with platforms; linux;
+    platforms   = with platforms; linux ++ darwin;
   };
 }
