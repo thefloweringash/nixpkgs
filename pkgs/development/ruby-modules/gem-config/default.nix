@@ -18,7 +18,7 @@
 # (to make gems behave if necessary).
 
 { lib, fetchurl, writeScript, ruby, kerberos, libxml2, libxslt, python, stdenv, which
-, libiconv, postgresql, v8_3_16_14, clang, sqlite, zlib, imagemagick
+, libiconv, postgresql, v8_3_16_14, clang, sqlite, zlib, imagemagick, libusb
 , pkgconfig , ncurses, xapian_1_2_22, gpgme, utillinux, fetchpatch, tzdata, icu, libffi
 , cmake, libssh2, openssl, mysql, darwin, git, perl, pcre, gecode_3, curl
 , msgpack, qt59, libsodium, snappy, libossp_uuid, lxc, libpcap, xorg, gtk2, buildRubyGem
@@ -211,6 +211,11 @@ in
           -e 's@Exec.run("bundle", "install"@Exec.run("true"@' \
           -e 's@FileUtils.cp_r site_template + "/.", path@FileUtils.cp_r site_template + "/.", path; FileUtils.chmod_R "u+w", path@'
     '';
+  };
+
+  libusb = attrs: {
+    buildInputs = [ libusb ];
+    buildFlags = [ "--enable-system-libusb" ];
   };
 
   # note that you need version >= v3.16.14.8,
