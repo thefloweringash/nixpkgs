@@ -1,42 +1,42 @@
 { stdenv, fetchFromGitHub, ncurses, gettext
 , pkgconfig, python, ruby, tcl, perl, luajit
-, darwin
+, darwin, xcbuild, writeShellScriptBin
 }:
+
+let
+  # Part of the xcbuild rule for copying something
+  copypng = writeShellScriptBin "copypng" ''
+    cp "$1" "$2"
+  '';
+in
 
 stdenv.mkDerivation rec {
   name = "macvim-${version}";
 
-  version = "7.4.909";
+  version = "8.1.950";  # Maybe we shouldn't use the vim version but the macvim snapshot number
 
   src = fetchFromGitHub {
     owner = "macvim-dev";
     repo = "macvim";
-    rev = "75aa7774645adb586ab9010803773bd80e659254";
-    sha256 = "0k04jimbms6zffh8i8fjm2y51q01m5kga2n4djipd3pxij1qy89y";
+    rev = "snapshot-155";
+    sha256 = "16v6amkjcgggmbkd9mlranw8hz67jpfjzys5ispp0g128y2sqkb7";
   };
 
   enableParallelBuilding = true;
 
-  nativeBuildInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig xcbuild ];
   buildInputs = [
     gettext ncurses luajit ruby tcl perl python
-  ];
+  ] ++ (with darwin.apple_sdk.frameworks; [ AppKit CoreServices Cocoa QuickLook ]);
 
   patches = [ ./macvim.patch ];
 
-  postPatch = ''
+  notpostPatch = ''
     substituteInPlace src/MacVim/mvim --replace "# VIM_APP_DIR=/Applications" "VIM_APP_DIR=$out/Applications"
-
-    # Don't create custom icons.
-    substituteInPlace src/MacVim/icons/Makefile --replace '$(MAKE) -C makeicns' ""
-    substituteInPlace src/MacVim/icons/make_icons.py --replace "dont_create = False" "dont_create = True"
-
-    # Full path to xcodebuild
-    substituteInPlace src/Makefile --replace "xcodebuild" "/usr/bin/xcodebuild"
   '';
 
   configureFlags = [
-      #"--enable-cscope" # TODO: cscope doesn't build on Darwin yet
+      "--enable-cscope"
       "--enable-fail-if-missing"
       "--with-features=huge"
       "--enable-gui=macvim"
@@ -56,27 +56,7 @@ stdenv.mkDerivation rec {
       "--with-compiledby=Nix"
   ];
 
-  makeFlags = ''PREFIX=$(out) CPPFLAGS="-Wno-error"'';
-
-  # This is unfortunate, but we need to use the same compiler as XCode,
-  # but XCode doesn't provide a way to configure the compiler.
-  #
-  # If you're willing to modify the system files, you can do this:
-  #   http://hamelot.co.uk/programming/add-gcc-compiler-to-xcode-6/
-  #
-  # But we don't have that option.
-  preConfigure = ''
-    CC=/usr/bin/clang
-
-    DEV_DIR=$(/usr/bin/xcode-select -print-path)/Platforms/MacOSX.platform/Developer
-    configureFlagsArray+=(
-      "--with-developer-dir=$DEV_DIR"
-    )
-  '';
-
-  postConfigure = ''
-    substituteInPlace src/auto/config.mk --replace "PERL_CFLAGS	=" "PERL_CFLAGS	= -I${darwin.libutil}/include"
-  '';
+  makeFlags = "PREFIX=$(out)";
 
   postInstall = ''
     mkdir -p $out/Applications
@@ -103,9 +83,8 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with stdenv.lib; {
-    broken = true; # needs ruby 2.2
     description = "Vim - the text editor - for macOS";
-    homepage    = https://github.com/b4winckler/macvim;
+    homepage    = "https://github.com/macvim-dev/macvim";
     license = licenses.vim;
     maintainers = with maintainers; [ cstrahan ];
     platforms   = platforms.darwin;
