@@ -1054,9 +1054,11 @@ self: super: {
       dontCheck super.dhall
   );
 
+  # Version 1.3.0 does not pass tests due to
+  # https://github.com/dhall-lang/dhall-haskell/issues/996
   dhall-json =
     generateOptparseApplicativeCompletions ["dhall-to-json" "dhall-to-yaml"] (
-      super.dhall-json
+      (overrideCabal (dontCheck super.dhall-json) { broken = false; })
   );
 
   dhall-nix =
