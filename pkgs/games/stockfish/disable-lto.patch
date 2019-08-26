@@ -1,0 +1,16 @@
+--- src/Makefile.orig	2018-11-29 23:45:26.000000000 +0900
++++ src/Makefile	2019-08-26 11:33:50.785899676 +0900
+@@ -334,13 +334,11 @@
+ ifeq ($(optimize),yes)
+ ifeq ($(debug), no)
+ 	ifeq ($(comp),$(filter $(comp),gcc clang))
+-		CXXFLAGS += -flto
+ 		LDFLAGS += $(CXXFLAGS)
+ 	endif
+ 
+ 	ifeq ($(comp),mingw)
+ 	ifeq ($(KERNEL),Linux)
+-		CXXFLAGS += -flto
+ 		LDFLAGS += $(CXXFLAGS)
+ 	endif
+ 	endif
