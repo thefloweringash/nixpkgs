@@ -106,6 +106,9 @@ in {
       "tools/mkenvimage"
       "tools/mkimage"
     ];
+    extraConfig = ''
+      CONFIG_FIT=y
+    '';
   };
 
   ubootA20OlinuxinoLime = buildUBoot {
