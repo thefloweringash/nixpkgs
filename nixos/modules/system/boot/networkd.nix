@@ -175,7 +175,7 @@ let
   checkNetwork = checkUnitConfig "Network" [
     (assertOnlyFields [
       "Description" "DHCP" "DHCPServer" "LinkLocalAddressing" "IPv4LLRoute"
-      "IPv6Token" "LLMNR" "MulticastDNS" "DNSOverTLS" "DNSSEC"
+      "DefaultRouteOnDevice" "IPv6Token" "LLMNR" "MulticastDNS" "DNSOverTLS" "DNSSEC"
       "DNSSECNegativeTrustAnchors" "LLDP" "EmitLLDP" "BindCarrier" "Address"
       "Gateway" "DNS" "Domains" "NTP" "IPForward" "IPMasquerade"
       "IPv6PrivacyExtensions" "IPv6AcceptRA" "IPv6DuplicateAddressDetection"
@@ -189,6 +189,7 @@ let
     (assertValueOneOf "DHCPServer" boolValues)
     (assertValueOneOf "LinkLocalAddressing" ["yes" "no" "ipv4" "ipv6" "ipv4-fallback" "fallback"])
     (assertValueOneOf "IPv4LLRoute" boolValues)
+    (assertValueOneOf "DefaultRouteOnDevice" boolValues)
     (assertValueOneOf "LLMNR" ["yes" "resolve" "no"])
     (assertValueOneOf "MulticastDNS" ["yes" "resolve" "no"])
     (assertValueOneOf "DNSOverTLS" ["opportunistic" "no"])
@@ -201,7 +202,7 @@ let
     (assertValueOneOf "IPv6AcceptRA" boolValues)
     (assertValueOneOf "IPv4ProxyARP" boolValues)
     (assertValueOneOf "IPv6ProxyNDP" boolValues)
-    (assertValueOneOf "IPv6PrefixDelegation" boolValues)
+    (assertValueOneOf "IPv6PrefixDelegation" ([ "dhcpv6" "static"] ++ boolValues))
     (assertValueOneOf "ActiveSlave" boolValues)
     (assertValueOneOf "PrimarySlave" boolValues)
     (assertValueOneOf "ConfigureWithoutCarrier" boolValues)
