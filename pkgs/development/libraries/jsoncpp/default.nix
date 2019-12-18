@@ -1,4 +1,4 @@
-{ stdenv , fetchFromGitHub , cmake , python }:
+{ stdenv , fetchFromGitHub , fetchpatch , cmake , python }:
 
 stdenv.mkDerivation rec {
   pname = "jsoncpp";
@@ -10,6 +10,14 @@ stdenv.mkDerivation rec {
     rev = version;
     sha256 = "037d1b1qdmn3rksmn1j71j26bv4hkjv7sn7da261k853xb5899sg";
   };
+
+  patches = [
+    # https://github.com/open-source-parsers/jsoncpp/pull/1120
+    (fetchpatch {
+      url = "https://github.com/open-source-parsers/jsoncpp/commit/9093358efae9e5981aa60013487fc7215f040a59.diff";
+      sha256 = "1wiqp70sck2md14sfc0zdkblqk9750cl55ykf9d6b9vs1ifzzzq5";
+    })
+  ];
 
   /* During darwin bootstrap, we have a cp that doesn't understand the
    * --reflink=auto flag, which is used in the default unpackPhase for dirs
