@@ -1,12 +1,14 @@
 {
+  # https://hydra.nixos.org/build/111556965
   busybox = import <nix/fetchurl.nix> {
-    url = http://nixos-arm.dezgeg.me/bootstrap-2017-04-13-1f32d4b4/armv7l/busybox;
-    sha256 = "187xwzsng5lpak1nanrk88y4mlydmrbhx6la00rrd6kjx376s565";
+    url = https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/bryxbn910b5cf1q54yxsw4dzyckdh3dy-busybox;
+    sha256 = "18qc6w2yykh7nvhjklsqb2zb3fjh4p9r22nvmgj32jr1mjflcsjn";
     executable = true;
   };
 
+  # https://hydra.nixos.org/build/111556911
   bootstrapTools = import <nix/fetchurl.nix> {
-    url = http://nixos-arm.dezgeg.me/bootstrap-2017-04-13-1f32d4b4/armv7l/bootstrap-tools.tar.xz;
-    sha256 = "05ayki2kak3i5lw97qidd5h9jv00dmlhx9h7l771bj331yamyqdn";
+    url = https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/dnd817yvqvbz3p77km228px9r9a7wc9n-bootstrap-tools.tar.xz;
+    sha256 = "0l0544ixi9x2y23c9fmwyvb1y9kd9gb3yamnr73mdf5f49vjvykr";
   };
 }
