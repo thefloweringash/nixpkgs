@@ -537,16 +537,16 @@ in {
         after = [ "network.target" ];
         environment = {
           PYTHONPATH = let
-              aenv = pkgs.python.buildEnv.override {
-                extraLibs = [ cfg.api.package pkgs.cairo pkgs.pythonPackages.cffi ] ++ cfg.api.finders;
+              aenv = pkgs.python3.buildEnv.override {
+                extraLibs = [ cfg.api.package pkgs.cairo pkgs.python3Packages.cffi ] ++ cfg.api.finders;
               };
-            in "${aenv}/${pkgs.python.sitePackages}";
+            in "${aenv}/${pkgs.python3.sitePackages}";
           GRAPHITE_API_CONFIG = graphiteApiConfig;
           LD_LIBRARY_PATH = "${pkgs.cairo.out}/lib";
         };
         serviceConfig = {
           ExecStart = ''
-            ${pkgs.python27Packages.waitress}/bin/waitress-serve \
+            ${pkgs.python3Packages.waitress}/bin/waitress-serve \
             --host=${cfg.api.listenAddress} --port=${toString cfg.api.port} \
             graphite_api.app:app
           '';
