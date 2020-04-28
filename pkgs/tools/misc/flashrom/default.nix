@@ -19,7 +19,21 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [ meson pkgconfig ninja ];
-  buildInputs = [ libftdi1 libusb1 pciutils ];
+  buildInputs = [ libftdi1 libusb1 ] ++ stdenv.lib.optional (! stdenv.isDarwin) pciutils;
+
+  mesonFlags = [
+    "-Dpciutils=${lib.boolToString stdenv.isLinux}"
+    "-Dconfig_linux_mtd=${lib.boolToString stdenv.isLinux}"
+    "-Dconfig_linux_spi=${lib.boolToString stdenv.isLinux}"
+
+    # TODO: when are these to be disabled?
+    "-Dconfig_serprog=false"
+    "-Dconfig_buspirate_spi=false"
+    "-Dconfig_pony_spi=false"
+    "-Dconfig_developerbox_spi=false"
+  ];
+
+  patches = [ ./fixes.patch ];
 
   meta = with lib; {
     homepage = http://www.flashrom.org;

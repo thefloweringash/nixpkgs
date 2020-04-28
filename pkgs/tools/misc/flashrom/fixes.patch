@@ -1,0 +1,35 @@
+diff --git a/meson.build b/meson.build
+index 699370a..43fcfd7 100644
+--- a/meson.build
++++ b/meson.build
+@@ -25,7 +25,9 @@ conf = configuration_data()
+ cc = meson.get_compiler('c')
+ add_project_arguments(cc.get_supported_arguments(warning_flags), language : 'c')
+ add_project_arguments('-D_DEFAULT_SOURCE', language : 'c')
+-add_project_arguments('-D_POSIX_C_SOURCE', language : 'c') # required for fileno
++# TODO: this is incorrect, POSIX_C_SOURCE is meant to be a value like 1, 2, or 199506L.
++# TODO: this disables clock_gettime on macOS, which requires >= 199309L
++# add_project_arguments('-D_POSIX_C_SOURCE', language : 'c') # required for fileno
+ add_project_arguments('-D_BSD_SOURCE', language : 'c') # required for glibc < v2.19
+ add_project_arguments('-DFLASHROM_VERSION="' + meson.project_version() + '"', language : 'c')
+ 
+@@ -71,6 +73,7 @@ srcs = []
+ 
+ need_raw_access = false
+ need_serial = false
++config_bitbang_spi = false
+ 
+ # check for required symbols
+ if cc.has_function('clock_gettime')
+@@ -352,7 +355,10 @@ srcs += 'w29ee011.c'
+ srcs += 'w39.c'
+ 
+ mapfile = 'libflashrom.map'
+-vflag = '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), mapfile)
++vflag = []
++if host_machine.system() in ['linux', 'windows']
++  vflag += '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), mapfile)
++endif
+ flashrom = shared_library(
+   'flashrom',
+   sources : [
