@@ -61,10 +61,10 @@ let
 
   carbonEnv = {
     PYTHONPATH = let
-      cenv = pkgs.python.buildEnv.override {
-        extraLibs = [ pkgs.python27Packages.carbon ];
+      cenv = pkgs.python3.buildEnv.override {
+        extraLibs = [ pkgs.python3Packages.carbon ];
       };
-      cenvPack =  "${cenv}/${pkgs.python.sitePackages}";
+      cenvPack =  "${cenv}/${pkgs.python3.sitePackages}";
     # opt/graphite/lib contains twisted.plugins.carbon-cache
     in "${cenvPack}/opt/graphite/lib:${cenvPack}";
     GRAPHITE_ROOT = dataDir;
@@ -132,7 +132,7 @@ in {
       finders = mkOption {
         description = "List of finder plugins to load.";
         default = [];
-        example = literalExample "[ pkgs.python27Packages.influxgraph ]";
+        example = literalExample "[ pkgs.python3Packages.influxgraph ]";
         type = types.listOf types.package;
       };
 
@@ -159,8 +159,8 @@ in {
 
       package = mkOption {
         description = "Package to use for graphite api.";
-        default = pkgs.python27Packages.graphite_api;
-        defaultText = "pkgs.python27Packages.graphite_api";
+        default = pkgs.python3Packages.graphite_api;
+        defaultText = "pkgs.python3Packages.graphite_api";
         type = types.package;
       };
 
@@ -409,7 +409,7 @@ in {
         environment = carbonEnv;
         serviceConfig = {
           RuntimeDirectory = name;
-          ExecStart = "${pkgs.pythonPackages.twisted}/bin/twistd ${carbonOpts name}";
+          ExecStart = "${pkgs.python3Packages.twisted}/bin/twistd ${carbonOpts name}";
           User = "graphite";
           Group = "graphite";
           PermissionsStartOnly = true;
@@ -431,7 +431,7 @@ in {
         environment = carbonEnv;
         serviceConfig = {
           RuntimeDirectory = name;
-          ExecStart = "${pkgs.pythonPackages.twisted}/bin/twistd ${carbonOpts name}";
+          ExecStart = "${pkgs.python3Packages.twisted}/bin/twistd ${carbonOpts name}";
           User = "graphite";
           Group = "graphite";
           PIDFile="/run/${name}/${name}.pid";
@@ -447,7 +447,7 @@ in {
         environment = carbonEnv;
         serviceConfig = {
           RuntimeDirectory = name;
-          ExecStart = "${pkgs.pythonPackages.twisted}/bin/twistd ${carbonOpts name}";
+          ExecStart = "${pkgs.python3Packages.twisted}/bin/twistd ${carbonOpts name}";
           User = "graphite";
           Group = "graphite";
           PIDFile="/run/${name}/${name}.pid";
@@ -457,19 +457,11 @@ in {
 
     (mkIf (cfg.carbon.enableCache || cfg.carbon.enableAggregator || cfg.carbon.enableRelay) {
       environment.systemPackages = [
-        pkgs.pythonPackages.carbon
+        pkgs.python3Packages.carbon
       ];
     })
 
-    (mkIf cfg.web.enable (let
-      python27' = pkgs.python27.override {
-        packageOverrides = self: super: {
-          django = self.django_1_8;
-          django_tagging = self.django_tagging_0_4_3;
-        };
-      };
-      pythonPackages = python27'.pkgs;
-    in {
+    (mkIf cfg.web.enable {
       systemd.services.graphiteWeb = {
         description = "Graphite Web Interface";
         wantedBy = [ "multi-user.target" ];
@@ -477,19 +469,19 @@ in {
         path = [ pkgs.perl ];
         environment = {
           PYTHONPATH = let
-              penv = pkgs.python.buildEnv.override {
+              penv = pkgs.python3.buildEnv.override {
                 extraLibs = [
-                  pythonPackages.graphite-web
-                  pythonPackages.pysqlite
+                  pkgs.python3Packages.graphite-web
+                  pkgs.python3Packages.pysqlite
                 ];
               };
-              penvPack = "${penv}/${pkgs.python.sitePackages}";
+              penvPack = "${penv}/${pkgs.python3.sitePackages}";
             in concatStringsSep ":" [
                  "${graphiteLocalSettingsDir}"
                  "${penvPack}/opt/graphite/webapp"
                  "${penvPack}"
                  # explicitly adding pycairo in path because it cannot be imported via buildEnv
-                 "${pkgs.pythonPackages.pycairo}/${pkgs.python.sitePackages}"
+                 "${pkgs.python3Packages.pycairo}/${pkgs.python3.sitePackages}"
                ];
           DJANGO_SETTINGS_MODULE = "graphite.settings";
           GRAPHITE_CONF_DIR = configDir;
@@ -498,7 +490,7 @@ in {
         };
         serviceConfig = {
           ExecStart = ''
-            ${pkgs.python27Packages.waitress-django}/bin/waitress-serve-django \
+            ${pkgs.python3Packages.waitress-django}/bin/waitress-serve-django \
               --host=${cfg.web.listenAddress} --port=${toString cfg.web.port}
           '';
           User = "graphite";
@@ -510,7 +502,7 @@ in {
             mkdir -p ${dataDir}/{whisper/,log/webapp/}
             chmod 0700 ${dataDir}/{whisper/,log/webapp/}
 
-            ${pkgs.pythonPackages.django_1_8}/bin/django-admin.py migrate --noinput
+            ${pkgs.python3Packages.django}/bin/django-admin.py migrate --noinput
 
             chown -R graphite:graphite ${dataDir}
 
@@ -518,17 +510,17 @@ in {
           fi
 
           # Only collect static files when graphite_web changes.
-          if ! [ "${dataDir}/current_graphite_web" -ef "${pythonPackages.graphite-web}" ]; then
+          if ! [ "${dataDir}/current_graphite_web" -ef "${pkgs.pythonPackages.graphite-web}" ]; then
             mkdir -p ${staticDir}
-            ${pkgs.pythonPackages.django_1_8}/bin/django-admin.py collectstatic  --noinput --clear
+            ${pkgs.python3Packages.django}/bin/django-admin.py collectstatic  --noinput --clear
             chown -R graphite:graphite ${staticDir}
             ln -sfT "${pythonPackages.graphite-web}" "${dataDir}/current_graphite_web"
           fi
         '';
       };
 
-      environment.systemPackages = [ pythonPackages.graphite-web ];
-    }))
+      environment.systemPackages = [ python3Packages.graphite-web ];
+    })
 
     (mkIf cfg.api.enable {
       systemd.services.graphiteApi = {
@@ -618,7 +610,7 @@ in {
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           ExecStart = ''
-            ${pkgs.pythonPackages.graphite_beacon}/bin/graphite-beacon \
+            ${pkgs.python3Packages.graphite_beacon}/bin/graphite-beacon \
               --config=${pkgs.writeText "graphite-beacon.json" (builtins.toJSON cfg.beacon.config)}
           '';
           User = "graphite";
