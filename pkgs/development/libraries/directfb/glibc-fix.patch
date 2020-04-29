@@ -1,0 +1,11 @@
+diff -ur source/gfxdrivers/davinci/davinci_c64x.c source-patched/gfxdrivers/davinci/davinci_c64x.c
+--- source/gfxdrivers/davinci/davinci_c64x.c	1970-01-01 09:00:01.000000000 +0900
++++ source-patched/gfxdrivers/davinci/davinci_c64x.c	2020-04-30 04:54:01.942919596 +0900
+@@ -37,6 +37,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/mman.h>
+ #include <sys/types.h>
++#include <sys/sysmacros.h>
+ #include <unistd.h>
+ 
+ #include <directfb_util.h>

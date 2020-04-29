@@ -14,6 +14,11 @@ stdenv.mkDerivation rec {
     sha256 = "0bs3yzb7hy3mgydrj8ycg7pllrd2b6j0gxj596inyr7ihssr3i0y";
   };
 
+  patches = [
+    # Fixes makedev under glibc 2.28; TODO: upstream to directfb and then nixpkgs
+    ./glibc-fix.patch
+  ];
+
   nativeBuildInputs = [ autoreconfHook perl pkgconfig flux ];
 
   buildInputs = [ zlib libjpeg freetype giflib libpng ]
