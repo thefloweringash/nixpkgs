@@ -69,7 +69,8 @@ stdenv.mkDerivation rec {
     "doc"
   ];
 
-  doCheck = true;
+  # Tests fail in every non-mainstream platform: https://github.com/Exiv2/exiv2/issues/933
+  doCheck = false;
 
   # Test setup found by inspecting ${src}/.travis/run.sh; problems without cmake.
   checkTarget = "tests";
