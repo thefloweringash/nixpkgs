@@ -17,6 +17,15 @@ stdenv.mkDerivation rec {
 
   outputs = [ "out" "lib" "dev" "man" ];
 
+  patches = stdenv.lib.optionals stdenv.hostPlatform.isAarch32 [
+    # Backport unreleased "test: use mmap() directly in syzbot generated code"
+    # https://git.kernel.dk/cgit/liburing/commit/?id=459e895f1167bbfc52649c204abc362a592d2bcb
+    (fetchpatch {
+      url = "https://git.kernel.dk/cgit/liburing/patch/?id=459e895f1167bbfc52649c204abc362a592d2bcb";
+      sha256 = "1zkldq1fksag44iqcxj6z8qyd0s47a7dxgspq1skmjr79c76fng7";
+    })
+  ];
+
   configurePhase = ''
     ./configure \
       --prefix=$out \
