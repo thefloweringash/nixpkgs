@@ -17,7 +17,8 @@ in stdenv.mkDerivation {
   patches = [ ./build-shared.patch ];
   makeFlags = [ "DESTDIR=" "PREFIX=$(out)" ];
   buildFlags = [ "library" ];
-  doCheck = true;
+  # https://github.com/nodejs/http-parser/issues/507
+  doCheck = !stdenv.hostPlatform.is32bit;
   checkTarget = "test";
 
   meta = with stdenv.lib; {
