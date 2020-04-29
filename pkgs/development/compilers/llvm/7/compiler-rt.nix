@@ -20,7 +20,7 @@ stdenv.mkDerivation {
     "-DSCUDO_DEFAULT_OPTIONS=DeleteSizeMismatch=0:DeallocationTypeMismatch=0"
   ];
 
-  cmakeFlags = [
+  cmakeFlags = stdenv.lib.optionals (useLLVM || stdenv.isDarwin) [
     "-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON"
     "-DCMAKE_C_COMPILER_TARGET=${stdenv.hostPlatform.config}"
     "-DCMAKE_ASM_COMPILER_TARGET=${stdenv.hostPlatform.config}"
@@ -71,7 +71,7 @@ stdenv.mkDerivation {
   '';
 
   # Hack around weird upsream RPATH bug
-  postInstall = stdenv.lib.optionalString (stdenv.hostPlatform.isDarwin || stdenv.hostPlatform.isWasm) ''
+  postInstall = stdenv.lib.optionalString stdenv.isDarwin ''
     ln -s "$out/lib"/*/* "$out/lib"
   '' + stdenv.lib.optionalString (useLLVM) ''
     ln -s $out/lib/*/clang_rt.crtbegin-*.o $out/lib/linux/crtbegin.o

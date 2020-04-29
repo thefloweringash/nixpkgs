@@ -1,4 +1,4 @@
-{ lowPrio, newScope, pkgs, stdenv, cmake, gcc, libstdcxxHook
+{ lowPrio, newScope, pkgs, stdenv, cmake, libstdcxxHook
 , libxml2, python3, isl, fetchurl, overrideCC, wrapCCWith
 , buildLlvmTools # tools, but from the previous stage, for cross
 , targetLlvmLibraries # libraries, but from the next stage, for cross
@@ -7,7 +7,6 @@
 let
   release_version = "5.0.2";
   version = release_version; # differentiating these is important for rc's
-  targetConfig = stdenv.targetPlatform.config;
 
   fetch = name: sha256: fetchurl {
     url = "https://releases.llvm.org/${release_version}/${name}-${version}.src.tar.xz";
@@ -57,12 +56,7 @@ let
       extraPackages = [
         targetLlvmLibraries.compiler-rt
       ];
-      extraBuildCommands = ''
-          echo "-target ${targetConfig}" >> $out/nix-support/cc-cflags
-          echo "-B${gcc.cc}/lib/gcc/${targetConfig}/${gcc.version}" >> $out/nix-support/cc-cflags
-          echo "-L${gcc.cc}/lib/gcc/${targetConfig}/${gcc.version}" >> $out/nix-support/cc-ldflags
-          echo "-L${gcc.cc.lib}/${targetConfig}/lib" >> $out/nix-support/cc-ldflags
-      '' + mkExtraBuildCommands cc;
+      extraBuildCommands = mkExtraBuildCommands cc;
     };
 
     libcxxClang = wrapCCWith rec {
