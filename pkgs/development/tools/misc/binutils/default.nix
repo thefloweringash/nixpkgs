@@ -74,7 +74,12 @@ stdenv.mkDerivation {
     ./0001-x86-Add-a-GNU_PROPERTY_X86_ISA_1_USED-note-if-needed.patch
     ./0001-x86-Properly-merge-GNU_PROPERTY_X86_ISA_1_USED.patch
     ./0001-x86-Properly-add-X86_ISA_1_NEEDED-property.patch
-  ] ++ lib.optional stdenv.targetPlatform.isiOS ./support-ios.patch;
+  ] ++ lib.optional stdenv.targetPlatform.isiOS ./support-ios.patch
+  ++ lib.optional stdenv.targetPlatform.isAarch32 [
+    # https://sourceware.org/legacy-ml/binutils/2019-08/msg00151.html
+    # https://sourceware.org/git/?p=binutils-gdb.git;a=commitdiff;h=baf46cd78048e1b959462567556e1de1ef6b9039
+    ./ARM-CMSE-symbols.patch
+  ];
 
   outputs = [ "out" "info" "man" ];
 
