@@ -12,6 +12,15 @@ stdenv.mkDerivation rec {
     sha256 = "0wg0pgcbilbb2wg08hsvd18q1m8vdk46b3piz7qb1pvgyq01idj2";
   };
 
+  patches = [
+    # Fixes build on some 32-bit platforms "error: '__NR_mmap' undeclared"
+    # Expected to appear in next upstream release.
+    (fetchpatch {
+      url = "https://git.kernel.dk/cgit/liburing/patch/?id=459e895f1167bbfc52649c204abc362a592d2bcb";
+      sha256 = "1zkldq1fksag44iqcxj6z8qyd0s47a7dxgspq1skmjr79c76fng7";
+    })
+  ];
+
   separateDebugInfo = true;
   enableParallelBuilding = true;
 
