@@ -1,0 +1,15 @@
+--- !tapi-tbd-v3
+archs:           [ i386, x86_64 ]
+uuids:           [ 'i386: A81E8DBE-8425-3F56-B0FC-760D2D9E7AF6', 'i386: A81E8DBE-8425-3F56-B0FC-760D2D9E7AF6', 
+                   'x86_64: 25C3866B-004E-3621-9CD3-B1E9C4D887EB', 'x86_64: 25C3866B-004E-3621-9CD3-B1E9C4D887EB' ]
+platform:        zippered
+install-name:    '/usr/lib/system/libsystem_symptoms.dylib'
+parent-umbrella: System
+exports:         
+  - archs:           [ i386, x86_64 ]
+    symbols:         [ __symptoms_daemon_fallback_initial_disposition, __symptoms_daemon_fallback_subseq_disposition, 
+                       __symptoms_is_daemon_fallback_blacklisted, _symptom_framework_init, 
+                       _symptom_framework_set_version, _symptom_new, _symptom_send, 
+                       _symptom_send_immediate, _symptom_set_additional_qualifier, 
+                       _symptom_set_qualifier ]
+...

@@ -1,0 +1,17 @@
+--- !tapi-tbd-v3
+archs:           [ i386, x86_64 ]
+uuids:           [ 'i386: 5D6D8E5B-832F-36BA-9671-103039E21505', 'i386: 5D6D8E5B-832F-36BA-9671-103039E21505', 
+                   'x86_64: 3D0A3AA8-8415-37B2-AAE3-66C03BCE8B55', 'x86_64: 3D0A3AA8-8415-37B2-AAE3-66C03BCE8B55' ]
+platform:        zippered
+install-name:    '/usr/lib/system/libsystem_coreservices.dylib'
+current-version: 114
+parent-umbrella: System
+exports:         
+  - archs:           [ i386, x86_64 ]
+    symbols:         [ _NSGetNextSearchPathEnumeration, _NSStartSearchPathEnumeration, 
+                       _NSStartSearchPathEnumerationPrivate, ___user_local_dirname, 
+                       ___user_relative_dirname, __append_relative_path_component, 
+                       __dirhelper, __dirhelper_relative, __get_user_dir_suffix, 
+                       __libcoreservices_fork_child, __set_user_dir_suffix, _sysdir_get_next_search_path_enumeration, 
+                       _sysdir_start_search_path_enumeration, _sysdir_start_search_path_enumeration_private ]
+...

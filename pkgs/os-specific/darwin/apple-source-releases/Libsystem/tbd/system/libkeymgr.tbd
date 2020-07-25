@@ -1,0 +1,16 @@
+--- !tapi-tbd-v3
+archs:           [ i386, x86_64 ]
+uuids:           [ 'i386: B2938E79-4453-33D0-AD46-9554A3D2D604', 'i386: B2938E79-4453-33D0-AD46-9554A3D2D604', 
+                   'x86_64: 52662CAA-DB1F-30A3-BE13-D6274B1A6D7B', 'x86_64: 52662CAA-DB1F-30A3-BE13-D6274B1A6D7B' ]
+platform:        zippered
+install-name:    '/usr/lib/system/libkeymgr.dylib'
+current-version: 30
+parent-umbrella: System
+exports:         
+  - archs:           [ i386, x86_64 ]
+    symbols:         [ ___keymgr_dwarf2_register_sections, ___keymgr_initializer, 
+                       __keymgr_get_and_lock_processwide_ptr, __keymgr_get_and_lock_processwide_ptr_2, 
+                       __keymgr_get_lock_count_processwide_ptr, __keymgr_get_lockmode_processwide_ptr, 
+                       __keymgr_set_and_unlock_processwide_ptr, __keymgr_set_lockmode_processwide_ptr, 
+                       __keymgr_unlock_processwide_ptr, _keymgrVersionNumber, _keymgrVersionString ]
+...
