@@ -88,52 +88,12 @@ appleDerivation {
     # The startup object files
     cp ${Csu}/lib/* $out/lib
 
-    # We can't re-exported libsystem_c and libsystem_kernel directly,
-    # so we link against the central library here.
-    mkdir -p $out/lib/system
-    ld -macosx_version_min 10.7 -arch x86_64 -dylib \
-       -o $out/lib/system/libsystem_c.dylib \
-       /usr/lib/libSystem.dylib \
-       -reexported_symbols_list ${./system_c_symbols}
-
-    ld -macosx_version_min 10.7 -arch x86_64 -dylib \
-       -o $out/lib/system/libsystem_kernel.dylib \
-       /usr/lib/libSystem.dylib \
-       -reexported_symbols_list ${./system_kernel_symbols}
-
-    # The umbrella libSystem also exports some symbols,
-    # but we don't want to pull in everything from the other libraries.
-    ld -macosx_version_min 10.7 -arch x86_64 -dylib \
-       -o $out/lib/libSystem_internal.dylib \
-       /usr/lib/libSystem.dylib \
-       -reexported_symbols_list ${./system_symbols}
-
-    # We used to determine these impurely based on the host system, but then when we got some 10.12 Hydra boxes,
-    # one of them accidentally built this derivation, referenced libsystem_symptoms.dylib, which doesn't exist on
-    # 10.11, and then broke all subsequent builds on 10.11. By picking a 10.11 compatible subset of the libraries,
-    # we avoid scary impurity issues like that.
-    libs=$(cat ${./reexported_libraries} | grep -v '^#')
-
-    for i in $libs; do
-      if [ "$i" != "/usr/lib/system/libsystem_kernel.dylib" ] && [ "$i" != "/usr/lib/system/libsystem_c.dylib" ]; then
-        args="$args -reexport_library $i"
-      fi
-    done
-
-    ld -macosx_version_min 10.7 -arch x86_64 -dylib \
-       -o $out/lib/libSystem.B.dylib \
-       -compatibility_version 1.0 \
-       -current_version 1226.10.1 \
-       -reexport_library $out/lib/system/libsystem_c.dylib \
-       -reexport_library $out/lib/system/libsystem_kernel.dylib \
-       -reexport_library $out/lib/libSystem_internal.dylib \
-       $args
-
-    ln -s libSystem.B.dylib $out/lib/libSystem.dylib
+    cp -vr ${./tbd}/* $out/lib
+    ln -s libSystem.B.tbd $out/lib/libSystem.tbd
 
     # Set up links to pretend we work like a conventional unix (Apple's design, not mine!)
     for name in c dbm dl info m mx poll proc pthread rpcsvc util gcc_s.10.4 gcc_s.10.5; do
-      ln -s libSystem.dylib $out/lib/lib$name.dylib
+      ln -s libSystem.tbd $out/lib/lib$name.tbd
     done
 
     # This probably doesn't belong here, but we want to stay similar to glibc, which includes resolv internally...
@@ -150,7 +110,7 @@ appleDerivation {
   '';
 
   meta = with stdenv.lib; {
-    description = "The Mac OS libc/libSystem (impure symlinks to binaries with pure headers)";
+    description = "The Mac OS libc/libSystem (tapi library with pure headers)";
     maintainers = with maintainers; [ copumpkin gridaphobe ];
     platforms   = platforms.darwin;
     license     = licenses.apsl20;
