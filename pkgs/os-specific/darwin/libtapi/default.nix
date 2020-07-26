@@ -20,7 +20,11 @@ stdenv.mkDerivation {
 
   buildFlags = [ "libtapi" ];
 
-  installTarget = "install-libtapi";
+  installTargets = [ "install-libtapi" "install-tapi-headers" ];
+
+  postInstall = ''
+    install_name_tool -id $out/lib/libtapi.dylib $out/lib/libtapi.dylib
+  '';
 
   meta = with lib; {
     license = licenses.apsl20;
