@@ -1,10 +1,10 @@
---- !tapi-tbd-v3
+--- !tapi-tbd-v2
 archs:           [ i386, x86_64 ]
-uuids:           [ 'i386: 1690ADE7-1B6F-3078-B0EA-371746C87415', 'i386: 1690ADE7-1B6F-3078-B0EA-371746C87415', 
-                   'x86_64: 253A12E2-F88F-3838-A666-C5306F833CB8', 'x86_64: 253A12E2-F88F-3838-A666-C5306F833CB8' ]
-platform:        zippered
-install-name:    '/usr/lib/system/libunwind.dylib'
-current-version: 35.4
+uuids:           [ 'i386: BE4AABDB-D7E1-3EAD-8CCD-5495CD5A0AA9', 'x86_64: 9F7C2AD8-A9A7-3DE4-828D-B0F0F166AAA0' ]
+platform:        macosx
+install-name:    /usr/lib/system/libunwind.dylib
+current-version: 35.3
+objc-constraint: none
 parent-umbrella: System
 exports:         
   - archs:           [ i386, x86_64 ]

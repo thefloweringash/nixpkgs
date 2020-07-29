@@ -1,10 +1,10 @@
---- !tapi-tbd-v3
+--- !tapi-tbd-v2
 archs:           [ i386, x86_64 ]
-uuids:           [ 'i386: 3C959A4D-4BF4-340A-8293-08F0DFAB6C87', 'i386: 3C959A4D-4BF4-340A-8293-08F0DFAB6C87', 
-                   'x86_64: 7AFBCAA6-81BE-36C3-8DB0-AAE0A4ACE4C5', 'x86_64: 7AFBCAA6-81BE-36C3-8DB0-AAE0A4ACE4C5' ]
-platform:        zippered
-install-name:    '/usr/lib/system/libsystem_blocks.dylib'
-current-version: 74
+uuids:           [ 'i386: B0565013-F778-3E93-86F6-665F50B27407', 'x86_64: B8C3701D-5A91-3D35-999D-2DC8D5393525' ]
+platform:        macosx
+install-name:    /usr/lib/system/libsystem_blocks.dylib
+current-version: 67.0
+objc-constraint: none
 parent-umbrella: System
 exports:         
   - archs:           [ i386, x86_64 ]
