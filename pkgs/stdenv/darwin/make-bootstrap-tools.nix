@@ -50,7 +50,7 @@ in rec {
     nativeBuildInputs = [ buildPackages.nukeReferences buildPackages.cpio ];
 
     buildCommand = ''
-      mkdir -p $out/bin $out/lib $out/lib/system $out/include
+      mkdir -p $out/bin $out/lib $out/lib/system $out/include $out/lib/darwin
 
       # libsystem is entirely fetched (TODO: what about Csu and/or x86_64 bootstrap?)
       # so not included here
@@ -101,6 +101,8 @@ in rec {
 
       cp -d ${llvmPackages.libcxx}/lib/libc++*.dylib $out/lib
       cp -d ${llvmPackages.libcxxabi}/lib/libc++abi*.dylib $out/lib
+      cp -d ${llvmPackages.compiler-rt}/lib/darwin/libclang_rt* $out/lib/darwin
+      cp -d --preserve=links ${llvmPackages.compiler-rt}/lib/libclang_rt* $out/lib
       cp -d ${llvmPackages.llvm.lib}/lib/libLLVM.dylib $out/lib
       cp -d ${libffi}/lib/libffi*.dylib $out/lib
 
@@ -149,7 +151,7 @@ in rec {
         fi
       done
 
-      for i in $out/bin/* $out/lib/*.dylib $out/lib/clang/*/lib/darwin/*.dylib $out/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation; do
+      for i in $out/bin/* $out/lib/*.dylib $out/lib/darwin/*.dylib $out/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation; do
         if test -x "$i" -a ! -L "$i"; then
           echo "Adding rpath to $i"
           rpathify $i
@@ -165,7 +167,7 @@ in rec {
 
       nuke-refs $out/lib/*
       nuke-refs $out/lib/system/*
-      nuke-refs $out/lib/clang/*/lib/darwin/*
+      nuke-refs $out/lib/darwin/*
       nuke-refs $out/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
 
       mkdir $out/.pack
