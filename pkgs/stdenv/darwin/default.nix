@@ -90,7 +90,18 @@ in rec {
         inherit shell;
         inherit (last) stdenvNoCC;
 
-        extraPackages = [];
+        extraPackages = [
+          # last.pkgs.llvmPackages_7.libcxxabi # TODO: is this required? if not, why not?
+          last.pkgs.llvmPackages_7.compiler-rt
+        ];
+
+        extraBuildCommands = ''
+          rsrc="$out/resource-root"
+          mkdir "$rsrc"
+          ln -s "${bootstrapTools}/lib/clang/7.1.0/include" "$rsrc"
+          ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
+          echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
+        '';
 
         nativeTools  = false;
         nativeLibc   = false;
@@ -180,6 +191,15 @@ in rec {
             ln -s ${bootstrapTools}/lib/libc++abi.dylib $out/lib/libc++abi.dylib
           '';
         };
+
+        compiler-rt = stdenv.mkDerivation {
+          name = "bootstrap-stage0-compiler-rt";
+          buildCommand = ''
+            mkdir -p $out/lib
+            ln -s ${bootstrapTools}/lib/libclang_rt* $out/lib
+            ln -s ${bootstrapTools}/lib/darwin       $out/lib/darwin
+          '';
+        };
       };
     };
 
@@ -198,6 +218,12 @@ in rec {
       python3 = super.python3Minimal;
 
       ninja = super.ninja.override { buildDocs = false; };
+
+      llvmPackages_7 = super.llvmPackages_7 // (let
+        libraries = super.llvmPackages_7.libraries.extend (_: _: {
+          inherit (llvmPackages_7) compiler-rt;
+        });
+      in { inherit libraries; } // libraries);
     };
   in with prevStage; stageFun 1 prevStage {
     extraPreHook = "export NIX_CFLAGS_COMPILE+=\" -F${bootstrapTools}/Library/Frameworks\"";
@@ -206,7 +232,7 @@ in rec {
     libcxx = pkgs.libcxx;
 
     allowedRequisites =
-      [ bootstrapTools ] ++ (with pkgs; [ libcxx libcxxabi ]) ++ [ pkgs.darwin.Libsystem ];
+      [ bootstrapTools ] ++ (with pkgs; [ libcxx libcxxabi llvmPackages_7.compiler-rt ]) ++ [ pkgs.darwin.Libsystem ];
 
     overrides = persistent;
   };
@@ -219,6 +245,12 @@ in rec {
         openssh sqlite sed serf openldap db cyrus-sasl expat apr-util subversion xz
         findfreetype libssh curl cmake autoconf automake libtool ed cpio coreutils
         libssh2 nghttp2 libkrb5 ninja;
+
+      llvmPackages_7 = super.llvmPackages_7 // (let
+        libraries = super.llvmPackages_7.libraries.extend (_: _: {
+          inherit (llvmPackages_7) compiler-rt;
+        });
+      in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
         inherit (darwin)
@@ -237,7 +269,8 @@ in rec {
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs; [
-        xz.bin xz.out libcxx libcxxabi zlib libxml2.out curl.out openssl.out libssh2.out
+        xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt
+        zlib libxml2.out curl.out openssl.out libssh2.out
         nghttp2.lib libkrb5
       ]) ++
       (with pkgs.darwin; [ dyld Libsystem CF ICU locale ]);
@@ -287,7 +320,8 @@ in rec {
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs; [
-        xz.bin xz.out bash libcxx libcxxabi zlib libxml2.out curl.out openssl.out libssh2.out
+        xz.bin xz.out bash libcxx libcxxabi llvmPackages_7.compiler-rt
+        zlib libxml2.out curl.out openssl.out libssh2.out
         nghttp2.lib libkrb5
       ]) ++
       (with pkgs.darwin; [ dyld ICU Libsystem locale ]);
