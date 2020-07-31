@@ -90,7 +90,18 @@ in rec {
         inherit shell;
         inherit (last) stdenvNoCC;
 
-        extraPackages = [];
+        extraPackages = [
+          last.pkgs.llvmPackages_7.libcxxabi
+          last.pkgs.llvmPackages_7.compiler-rt
+        ];
+
+        extraBuildCommands = ''
+          rsrc="$out/resource-root"
+          mkdir "$rsrc"
+          ln -s "${bootstrapTools}/lib/clang/7.1.0/include" "$rsrc"
+          ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
+          echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
+        '';
 
         nativeTools  = false;
         nativeLibc   = false;
@@ -180,6 +191,15 @@ in rec {
             ln -s ${bootstrapTools}/lib/libc++abi.dylib $out/lib/libc++abi.dylib
           '';
         };
+
+        compiler-rt = stdenv.mkDerivation {
+          name = "bootstrap-stage0-compiler-rt";
+          buildCommand = ''
+            mkdir -p $out/lib
+            ln -s ${bootstrapTools}/lib/libclang* $out/lib
+            ln -s ${bootstrapTools}/lib/darwin    $out/lib/darwin
+          '';
+        };
       };
     };
 
@@ -212,7 +232,7 @@ in rec {
     libcxx = pkgs.libcxx;
 
     allowedRequisites =
-      [ bootstrapTools ] ++ (with pkgs; [ libcxx libcxxabi ]) ++ [ pkgs.darwin.Libsystem ];
+      [ bootstrapTools ] ++ (with pkgs; [ libcxx libcxxabi llvmPackages_7.compiler-rt ]) ++ [ pkgs.darwin.Libsystem ];
 
     overrides = persistent;
   };
