@@ -72,44 +72,50 @@ in rec {
         inherit (last) stdenv;
       };
 
-      coreutils = { name = "${name}-coreutils"; outPath = bootstrapTools; };
-      gnugrep   = { name = "${name}-gnugrep";   outPath = bootstrapTools; };
+      release_version = "7.1.0";
 
-      bintools = import ../../build-support/bintools-wrapper {
-        inherit shell;
-        inherit (last) stdenvNoCC;
+      mkExtraBuildCommands = cc: ''
+        rsrc="$out/resource-root"
+        mkdir "$rsrc"
+        ln -s "${cc}/lib/clang/${release_version}/include" "$rsrc"
+        ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
+        echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
+      '';
 
-        nativeTools  = false;
-        nativeLibc   = false;
-        inherit buildPackages coreutils gnugrep;
-        libc         = last.pkgs.darwin.Libsystem;
-        bintools     = { name = "${name}-binutils"; outPath = bootstrapTools; };
-      };
+      mkCC = overrides: import ../../build-support/cc-wrapper (
+        let args = {
+          inherit shell;
+          inherit (last) stdenvNoCC;
 
-      cc = if last == null then "/dev/null" else import ../../build-support/cc-wrapper {
-        inherit shell;
-        inherit (last) stdenvNoCC;
+          nativeTools  = false;
+          nativeLibc   = false;
+          inherit buildPackages libcxx;
+          inherit (last.pkgs) coreutils gnugrep;
+          bintools     = last.pkgs.darwin.binutils;
+          libc         = last.pkgs.darwin.Libsystem;
+          isClang      = true;
+          cc           = last.pkgs.llvmPackages_7.clang-unwrapped;
+        }; in args // (overrides args));
 
+      cc = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         extraPackages = [
-          # last.pkgs.llvmPackages_7.libcxxabi # TODO: is this required? if not, why not?
+          last.pkgs.llvmPackages_7.libcxxabi
           last.pkgs.llvmPackages_7.compiler-rt
         ];
+        extraBuildCommands = mkExtraBuildCommands cc;
+      });
 
+      ccNoLibcxx = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
+        libcxx = null;
+        extraPackages = [
+          last.pkgs.llvmPackages_7.compiler-rt
+        ];
         extraBuildCommands = ''
-          rsrc="$out/resource-root"
-          mkdir "$rsrc"
-          ln -s "${bootstrapTools}/lib/clang/7.1.0/include" "$rsrc"
-          ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
-          echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
-        '';
-
-        nativeTools  = false;
-        nativeLibc   = false;
-        inherit buildPackages coreutils gnugrep bintools libcxx;
-        libc         = last.pkgs.darwin.Libsystem;
-        isClang      = true;
-        cc           = { name = "${name}-clang"; outPath = bootstrapTools; };
-      };
+          echo "-rtlib=compiler-rt" >> $out/nix-support/cc-cflags
+          echo "-B${last.pkgs.llvmPackages_7.compiler-rt}/lib" >> $out/nix-support/cc-cflags
+          echo "-nostdlib++" >> $out/nix-support/cc-cflags
+        '' + mkExtraBuildCommands cc;
+      });
 
       thisStdenv = import ../generic {
         name = "${name}-stdenv-darwin";
@@ -148,7 +154,10 @@ in rec {
         extraAttrs = {
           inherit macosVersionMin appleSdkVersion platform;
         };
-        overrides  = self: super: (overrides self super) // { fetchurl = thisStdenv.fetchurlBoot; };
+        overrides  = self: super: (overrides self super) // {
+          inherit ccNoLibcxx;
+          fetchurl = thisStdenv.fetchurlBoot;
+        };
       };
 
     in {
@@ -158,6 +167,9 @@ in rec {
 
   stage0 = stageFun 0 null {
     overrides = self: super: with stage0; {
+      coreutils = { name = "bootstrap-stage0-coreutils"; outPath = bootstrapTools; };
+      gnugrep   = { name = "bootstrap-stage0-gnugrep";   outPath = bootstrapTools; };
+
       darwin = super.darwin // {
         Libsystem = stdenv.mkDerivation {
           name = "bootstrap-stage0-Libsystem";
@@ -168,9 +180,22 @@ in rec {
           '';
         };
         dyld = bootstrapTools;
+
+        binutils = lib.makeOverridable (import ../../build-support/bintools-wrapper) {
+          shell = "${bootstrapTools}/bin/bash";
+          inherit (self) stdenvNoCC;
+
+          nativeTools  = false;
+          nativeLibc   = false;
+          inherit (self) buildPackages coreutils gnugrep;
+          libc         = self.pkgs.darwin.Libsystem;
+          bintools     = { name = "bootstrap-stag0-binutils"; outPath = bootstrapTools; };
+        };
       };
 
       llvmPackages_7 = {
+        clang-unwrapped = { name = "bootstrap-stage0-clang"; outPath = bootstrapTools; };
+
         libcxx = stdenv.mkDerivation {
           name = "bootstrap-stage0-libcxx";
           phases = [ "installPhase" "fixupPhase" ];
@@ -221,11 +246,14 @@ in rec {
 
       llvmPackages_7 = super.llvmPackages_7 // (let
         libraries = super.llvmPackages_7.libraries.extend (_: _: {
-          inherit (llvmPackages_7) compiler-rt;
+          inherit (llvmPackages_7) clang-unwrapped compiler-rt libcxx libcxxabi;
         });
       in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
+        binutils = darwin.binutils.override {
+          libc = self.darwin.Libsystem;
+        };
         cctools = super.darwin.cctools.override {
           enableTapiSupport = false;
         };
@@ -253,14 +281,21 @@ in rec {
         libssh2 nghttp2 libkrb5 ninja;
 
       llvmPackages_7 = super.llvmPackages_7 // (let
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
-          inherit (llvmPackages_7) compiler-rt;
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
+          inherit (llvmPackages_7) clang-unwrapped compiler-rt;
+          libcxx = libSuper.libcxx.override {
+            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
+          };
+          libcxxabi = libSuper.libcxxabi.override {
+            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
+            standalone = true;
+          };
         });
       in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
         inherit (darwin)
-          dyld Libsystem xnu configd ICU libdispatch libclosure launchd CF;
+          binutils dyld Libsystem xnu configd ICU libdispatch libclosure launchd CF;
       };
     };
   in with prevStage; stageFun 2 prevStage {
@@ -277,7 +312,7 @@ in rec {
       (with pkgs; [
         xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5
+        nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
       ]) ++
       (with pkgs.darwin; [ dyld Libsystem CF ICU locale ]);
 
@@ -303,6 +338,9 @@ in rec {
       in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
+        cctools = super.darwin.cctools.override {
+          enableTapiSupport = false;
+        };
         inherit (darwin)
           dyld Libsystem xnu configd libdispatch libclosure launchd libiconv locale;
       };
@@ -328,7 +366,7 @@ in rec {
       (with pkgs; [
         xz.bin xz.out bash libcxx libcxxabi llvmPackages_7.compiler-rt
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5
+        nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
       ]) ++
       (with pkgs.darwin; [ dyld ICU Libsystem locale ]);
 
