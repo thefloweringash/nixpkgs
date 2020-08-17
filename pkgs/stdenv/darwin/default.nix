@@ -86,30 +86,56 @@ in rec {
         bintools     = { name = "${name}-binutils"; outPath = bootstrapTools; };
       };
 
-      cc = if last == null then "/dev/null" else import ../../build-support/cc-wrapper {
-        inherit shell;
-        inherit (last) stdenvNoCC;
+      release_version = "7.1.0";
 
+      mkExtraBuildCommands = cc: ''
+        rsrc="$out/resource-root"
+        mkdir "$rsrc"
+        ln -s "${bootstrapTools}/lib/clang/${release_version}/include" "$rsrc"
+        ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
+        echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
+      '';
+
+      mkCC = overrides: import ../../build-support/cc-wrapper (
+        let args = {
+          inherit shell;
+          inherit (last) stdenvNoCC;
+
+          nativeTools  = false;
+          nativeLibc   = false;
+          inherit buildPackages coreutils gnugrep bintools libcxx;
+          libc         = last.pkgs.darwin.Libsystem;
+          isClang      = true;
+          cc           = { name = "${name}-clang"; outPath = bootstrapTools; };
+        }; in args // (overrides args));
+
+      cc = if last == null then "/dev/null" else mkCC (cc: {
         extraPackages = [
-          # last.pkgs.llvmPackages_7.libcxxabi # TODO: is this required? if not, why not?
+          last.pkgs.llvmPackages_7.libcxxabi
           last.pkgs.llvmPackages_7.compiler-rt
         ];
+        extraBuildCommands = mkExtraBuildCommands cc;
+      });
 
+      ccNoCompilerRt = if last == null then "/dev/null" else mkCC (cc: {
+        libcxx = null;
+        extraPackages = [ ];
         extraBuildCommands = ''
-          rsrc="$out/resource-root"
-          mkdir "$rsrc"
-          ln -s "${bootstrapTools}/lib/clang/7.1.0/include" "$rsrc"
-          ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
-          echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
+          echo "-nostartfiles" >> $out/nix-support/cc-cflags
         '';
+      });
 
-        nativeTools  = false;
-        nativeLibc   = false;
-        inherit buildPackages coreutils gnugrep bintools libcxx;
-        libc         = last.pkgs.darwin.Libsystem;
-        isClang      = true;
-        cc           = { name = "${name}-clang"; outPath = bootstrapTools; };
-      };
+      ccNoLibcxx = if last == null then "/dev/null" else mkCC (cc: {
+        libcxx = null;
+        extraPackages = [
+          last.pkgs.llvmPackages_7.compiler-rt
+        ];
+        extraBuildCommands = ''
+          echo "-rtlib=compiler-rt" >> $out/nix-support/cc-cflags
+          echo "-B${last.pkgs.llvmPackages_7.compiler-rt}/lib" >> $out/nix-support/cc-cflags
+          echo "-nostdlib++" >> $out/nix-support/cc-cflags
+        '' + mkExtraBuildCommands cc;
+      });
 
       thisStdenv = import ../generic {
         name = "${name}-stdenv-darwin";
@@ -148,7 +174,10 @@ in rec {
         extraAttrs = {
           inherit macosVersionMin appleSdkVersion platform;
         };
-        overrides  = self: super: (overrides self super) // { fetchurl = thisStdenv.fetchurlBoot; };
+        overrides  = self: super: (overrides self super) // {
+          inherit ccNoCompilerRt ccNoLibcxx;
+          fetchurl = thisStdenv.fetchurlBoot;
+        };
       };
 
     in {
@@ -220,8 +249,14 @@ in rec {
       ninja = super.ninja.override { buildDocs = false; };
 
       llvmPackages_7 = super.llvmPackages_7 // (let
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
           inherit (llvmPackages_7) compiler-rt;
+          libcxx = libSuper.libcxx.override {
+            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
+          };
+          libcxxabi = libSuper.libcxxabi.override {
+            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
+          };
         });
       in { inherit libraries; } // libraries);
 
@@ -253,8 +288,14 @@ in rec {
         libssh2 nghttp2 libkrb5 ninja;
 
       llvmPackages_7 = super.llvmPackages_7 // (let
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
           inherit (llvmPackages_7) compiler-rt;
+          libcxx = libSuper.libcxx.override {
+            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
+          };
+          libcxxabi = libSuper.libcxxabi.override {
+            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
+          };
         });
       in { inherit libraries; } // libraries);
 
@@ -297,8 +338,11 @@ in rec {
       libxml2 = super.libxml2.override { pythonSupport = false; };
 
       llvmPackages_7 = super.llvmPackages_7 // (let
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
           inherit (llvmPackages_7) libcxx libcxxabi;
+          compiler-rt = libSuper.compiler-rt.override {
+            stdenv = overrideCC self.stdenv self.ccNoCompilerRt;
+          };
         });
       in { inherit libraries; } // libraries);
 
