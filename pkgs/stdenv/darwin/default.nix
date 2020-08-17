@@ -91,7 +91,7 @@ in rec {
       mkExtraBuildCommands = cc: ''
         rsrc="$out/resource-root"
         mkdir "$rsrc"
-        ln -s "${bootstrapTools}/lib/clang/${release_version}/include" "$rsrc"
+        ln -s "${cc}/lib/clang/${release_version}/include" "$rsrc"
         ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
         echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
       '';
@@ -109,7 +109,7 @@ in rec {
           cc           = { name = "${name}-clang"; outPath = bootstrapTools; };
         }; in args // (overrides args));
 
-      cc = if last == null then "/dev/null" else mkCC (cc: {
+      cc = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         extraPackages = [
           last.pkgs.llvmPackages_7.libcxxabi
           last.pkgs.llvmPackages_7.compiler-rt
@@ -117,7 +117,7 @@ in rec {
         extraBuildCommands = mkExtraBuildCommands cc;
       });
 
-      ccNoCompilerRt = if last == null then "/dev/null" else mkCC (cc: {
+      ccNoCompilerRt = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         libcxx = null;
         extraPackages = [ ];
         extraBuildCommands = ''
@@ -125,7 +125,7 @@ in rec {
         '';
       });
 
-      ccNoLibcxx = if last == null then "/dev/null" else mkCC (cc: {
+      ccNoLibcxx = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         libcxx = null;
         extraPackages = [
           last.pkgs.llvmPackages_7.compiler-rt
