@@ -342,6 +342,7 @@ in rec {
           inherit (llvmPackages_7) libcxx libcxxabi;
           compiler-rt = libSuper.compiler-rt.override {
             stdenv = overrideCC self.stdenv self.ccNoCompilerRt;
+            bootstrap = true;
           };
         });
       in { inherit libraries; } // libraries);
@@ -401,7 +402,7 @@ in rec {
           llvm = llvmPackages_7.llvm.override { inherit libxml2; };
         });
         libraries = super.llvmPackages_7.libraries.extend (llvmSelf: _: {
-          inherit (llvmPackages_7) libcxx libcxxabi compiler-rt;
+          inherit (llvmPackages_7) libcxx libcxxabi;
         });
       in { inherit tools libraries; } // tools // libraries);
 

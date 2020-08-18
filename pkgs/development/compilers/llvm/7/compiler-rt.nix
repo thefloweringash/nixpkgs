@@ -1,4 +1,4 @@
-{ stdenv, version, fetch, cmake, python3, llvm, libcxxabi }:
+{ stdenv, version, fetch, cmake, python3, llvm, libcxxabi, bootstrap ? false }:
 
 let
 
@@ -9,12 +9,12 @@ let
 in
 
 stdenv.mkDerivation {
-  pname = "compiler-rt";
+  pname = "compiler-rt${if bootstrap then "-bootstrap" else ""}";
   inherit version;
   src = fetch "compiler-rt" "1n48p8gjarihkws0i2bay5w9bdwyxyxxbpwyng7ba58jb30dlyq5";
 
   nativeBuildInputs = [ cmake python3 llvm ];
-  buildInputs = stdenv.lib.optional stdenv.hostPlatform.isDarwin libcxxabi;
+  buildInputs = stdenv.lib.optional (stdenv.hostPlatform.isDarwin && !bootstrap) libcxxabi;
 
   NIX_CFLAGS_COMPILE = [
     "-DSCUDO_DEFAULT_OPTIONS=DeleteSizeMismatch=0:DeallocationTypeMismatch=0"
@@ -24,17 +24,17 @@ stdenv.mkDerivation {
     "-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON"
     "-DCMAKE_C_COMPILER_TARGET=${stdenv.hostPlatform.config}"
     "-DCMAKE_ASM_COMPILER_TARGET=${stdenv.hostPlatform.config}"
-  ] ++ stdenv.lib.optionals (useLLVM || bareMetal || isMusl) [
+  ] ++ stdenv.lib.optionals (useLLVM || bareMetal || isMusl || bootstrap) [
     "-DCOMPILER_RT_BUILD_SANITIZERS=OFF"
     "-DCOMPILER_RT_BUILD_XRAY=OFF"
     "-DCOMPILER_RT_BUILD_LIBFUZZER=OFF"
     "-DCOMPILER_RT_BUILD_PROFILE=OFF"
-  ] ++ stdenv.lib.optionals (useLLVM || bareMetal) [
+  ] ++ stdenv.lib.optionals (useLLVM || bareMetal || bootstrap) [
     "-DCMAKE_C_COMPILER_WORKS=ON"
     "-DCMAKE_CXX_COMPILER_WORKS=ON"
     "-DCOMPILER_RT_BAREMETAL_BUILD=ON"
     "-DCMAKE_SIZEOF_VOID_P=${toString (stdenv.hostPlatform.parsed.cpu.bits / 8)}"
-  ] ++ stdenv.lib.optionals (useLLVM) [
+  ] ++ stdenv.lib.optionals (useLLVM || bootstrap) [
     "-DCOMPILER_RT_BUILD_BUILTINS=ON"
     "-DCMAKE_C_FLAGS=-nodefaultlibs"
     #https://stackoverflow.com/questions/53633705/cmake-the-c-compiler-is-not-able-to-compile-a-simple-test-program
