@@ -20,7 +20,9 @@ stdenv.mkDerivation {
     patch -p1 -d $(ls -d libcxx-*) -i ${../libcxx-0001-musl-hacks.patch}
   '';
 
-  cmakeFlags = stdenv.lib.optional (!enableShared) "-DLIBCXXABI_ENABLE_SHARED=OFF";
+  cmakeFlags = [
+    "-DLLVM_ENABLE_LIBCXX=ON"
+  ] ++ stdenv.lib.optional (!enableShared) "-DLIBCXXABI_ENABLE_SHARED=OFF";
 
   installPhase = if stdenv.isDarwin
     then ''
