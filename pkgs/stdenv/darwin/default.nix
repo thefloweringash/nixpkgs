@@ -117,14 +117,6 @@ in rec {
         extraBuildCommands = mkExtraBuildCommands cc;
       });
 
-      ccNoCompilerRt = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
-        libcxx = null;
-        extraPackages = [ ];
-        extraBuildCommands = ''
-          echo "-nostartfiles" >> $out/nix-support/cc-cflags
-        '';
-      });
-
       ccNoLibcxx = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         libcxx = null;
         extraPackages = [
@@ -175,7 +167,7 @@ in rec {
           inherit macosVersionMin appleSdkVersion platform;
         };
         overrides  = self: super: (overrides self super) // {
-          inherit ccNoCompilerRt ccNoLibcxx;
+          inherit ccNoLibcxx;
           fetchurl = thisStdenv.fetchurlBoot;
         };
       };
