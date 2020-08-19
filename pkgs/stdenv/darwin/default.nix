@@ -72,20 +72,6 @@ in rec {
         inherit (last) stdenv;
       };
 
-      coreutils = { name = "${name}-coreutils"; outPath = bootstrapTools; };
-      gnugrep   = { name = "${name}-gnugrep";   outPath = bootstrapTools; };
-
-      bintools = import ../../build-support/bintools-wrapper {
-        inherit shell;
-        inherit (last) stdenvNoCC;
-
-        nativeTools  = false;
-        nativeLibc   = false;
-        inherit buildPackages coreutils gnugrep;
-        libc         = last.pkgs.darwin.Libsystem;
-        bintools     = { name = "${name}-binutils"; outPath = bootstrapTools; };
-      };
-
       release_version = "7.1.0";
 
       mkExtraBuildCommands = cc: ''
@@ -103,7 +89,9 @@ in rec {
 
           nativeTools  = false;
           nativeLibc   = false;
-          inherit buildPackages coreutils gnugrep bintools libcxx;
+          inherit buildPackages libcxx;
+          inherit (last.pkgs) coreutils gnugrep;
+          bintools     = last.pkgs.darwin.binutils;
           libc         = last.pkgs.darwin.Libsystem;
           isClang      = true;
           cc           = last.pkgs.llvmPackages_7.clang-unwrapped;
@@ -179,6 +167,9 @@ in rec {
 
   stage0 = stageFun 0 null {
     overrides = self: super: with stage0; {
+      coreutils = { name = "bootstrap-stage0-coreutils"; outPath = bootstrapTools; };
+      gnugrep   = { name = "bootstrap-stage0-gnugrep";   outPath = bootstrapTools; };
+
       darwin = super.darwin // {
         Libsystem = stdenv.mkDerivation {
           name = "bootstrap-stage0-Libsystem";
@@ -189,6 +180,17 @@ in rec {
           '';
         };
         dyld = bootstrapTools;
+
+        binutils = import ../../build-support/bintools-wrapper {
+          shell = "${bootstrapTools}/bin/bash";
+          inherit (self) stdenvNoCC;
+
+          nativeTools  = false;
+          nativeLibc   = false;
+          inherit (self) buildPackages coreutils gnugrep;
+          libc         = self.pkgs.darwin.Libsystem;
+          bintools     = { name = "bootstrap-stag0-binutils"; outPath = bootstrapTools; };
+        };
       };
 
       llvmPackages_7 = {
@@ -244,17 +246,12 @@ in rec {
 
       llvmPackages_7 = super.llvmPackages_7 // (let
         libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
-          inherit (llvmPackages_7) clang-unwrapped compiler-rt;
-          libcxx = libSuper.libcxx.override {
-            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
-          };
-          libcxxabi = libSuper.libcxxabi.override {
-            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
-          };
+          inherit (llvmPackages_7) clang-unwrapped compiler-rt libcxx libcxxabi;
         });
       in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
+        inherit (darwin) Libsystem binutils;
         cctools = super.darwin.cctools.override {
           enableTapiSupport = false;
         };
@@ -295,7 +292,7 @@ in rec {
 
       darwin = super.darwin // {
         inherit (darwin)
-          dyld Libsystem xnu configd ICU libdispatch libclosure launchd CF;
+          binutils dyld Libsystem xnu configd ICU libdispatch libclosure launchd CF;
       };
     };
   in with prevStage; stageFun 2 prevStage {
@@ -334,16 +331,12 @@ in rec {
       llvmPackages_7 = super.llvmPackages_7 // (let
         libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
           inherit (llvmPackages_7) libcxx libcxxabi;
-          compiler-rt = libSuper.compiler-rt.override {
-            stdenv = overrideCC self.stdenv self.ccNoCompilerRt;
-            bootstrap = true;
-          };
         });
       in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
         inherit (darwin)
-          dyld Libsystem xnu configd libdispatch libclosure launchd libiconv locale;
+          binutils dyld Libsystem xnu configd libdispatch libclosure launchd libiconv locale;
       };
     };
   in with prevStage; stageFun 3 prevStage {
@@ -396,7 +389,7 @@ in rec {
           llvm = llvmPackages_7.llvm.override { inherit libxml2; };
         });
         libraries = super.llvmPackages_7.libraries.extend (llvmSelf: _: {
-          inherit (llvmPackages_7) libcxx libcxxabi;
+          inherit (llvmPackages_7) libcxx libcxxabi compiler-rt;
         });
       in { inherit tools libraries; } // tools // libraries);
 
