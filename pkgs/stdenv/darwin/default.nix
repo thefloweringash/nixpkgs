@@ -181,7 +181,7 @@ in rec {
         };
         dyld = bootstrapTools;
 
-        binutils = import ../../build-support/bintools-wrapper {
+        binutils = lib.makeOverridable (import ../../build-support/bintools-wrapper) {
           shell = "${bootstrapTools}/bin/bash";
           inherit (self) stdenvNoCC;
 
@@ -251,7 +251,9 @@ in rec {
       in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
-        inherit (darwin) Libsystem binutils;
+        binutils = darwin.binutils.override {
+          libc = self.darwin.Libsystem;
+        };
         cctools = super.darwin.cctools.override {
           enableTapiSupport = false;
         };
@@ -309,7 +311,7 @@ in rec {
       (with pkgs; [
         xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5
+        nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
       ]) ++
       (with pkgs.darwin; [ dyld Libsystem CF ICU locale ]);
 
@@ -335,8 +337,11 @@ in rec {
       in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
+        cctools = super.darwin.cctools.override {
+          enableTapiSupport = false;
+        };
         inherit (darwin)
-          binutils dyld Libsystem xnu configd libdispatch libclosure launchd libiconv locale;
+          dyld xnu configd Libsystem libdispatch libclosure launchd libiconv locale;
       };
     };
   in with prevStage; stageFun 3 prevStage {
@@ -360,7 +365,7 @@ in rec {
       (with pkgs; [
         xz.bin xz.out bash libcxx libcxxabi llvmPackages_7.compiler-rt
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5
+        nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
       ]) ++
       (with pkgs.darwin; [ dyld ICU Libsystem locale ]);
 
