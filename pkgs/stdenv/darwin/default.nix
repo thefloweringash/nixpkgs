@@ -106,7 +106,7 @@ in rec {
           inherit buildPackages coreutils gnugrep bintools libcxx;
           libc         = last.pkgs.darwin.Libsystem;
           isClang      = true;
-          cc           = { name = "${name}-clang"; outPath = bootstrapTools; };
+          cc           = last.pkgs.llvmPackages_7.clang-unwrapped;
         }; in args // (overrides args));
 
       cc = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
@@ -192,6 +192,8 @@ in rec {
       };
 
       llvmPackages_7 = {
+        clang-unwrapped = { name = "bootstrap-stage0-clang"; outPath = bootstrapTools; };
+
         libcxx = stdenv.mkDerivation {
           name = "bootstrap-stage0-libcxx";
           phases = [ "installPhase" "fixupPhase" ];
@@ -242,7 +244,7 @@ in rec {
 
       llvmPackages_7 = super.llvmPackages_7 // (let
         libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
-          inherit (llvmPackages_7) compiler-rt;
+          inherit (llvmPackages_7) clang-unwrapped compiler-rt;
           libcxx = libSuper.libcxx.override {
             stdenv = overrideCC self.stdenv self.ccNoLibcxx;
           };
@@ -281,7 +283,7 @@ in rec {
 
       llvmPackages_7 = super.llvmPackages_7 // (let
         libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
-          inherit (llvmPackages_7) compiler-rt;
+          inherit (llvmPackages_7) clang-unwrapped compiler-rt;
           libcxx = libSuper.libcxx.override {
             stdenv = overrideCC self.stdenv self.ccNoLibcxx;
           };
