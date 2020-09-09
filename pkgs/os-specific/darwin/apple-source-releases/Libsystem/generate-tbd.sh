@@ -12,7 +12,7 @@ tapi() {
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/tapi "$@"
 }
 
-out=$PWD/tbd
+out=${GEN_TBD_OUT:-$PWD/tbd}
 
 mkdir -p $out
 
@@ -51,4 +51,4 @@ export_library() {
   fi
 }
 
-export_library /usr/lib/libSystem.B.dylib
+export_library "${1:-/usr/lib/libSystem.B.dylib}"
