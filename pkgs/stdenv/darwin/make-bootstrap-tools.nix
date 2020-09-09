@@ -28,11 +28,11 @@ in rec {
     buildCommand = ''
       mkdir -p $out/bin $out/lib $out/lib/system $out/lib/darwin
 
-      # We're not going to bundle the actual libSystem.dylib; instead we reconstruct it on
-      # the other side. See the notes in stdenv/darwin/default.nix for more information.
+      # Copy a definition of libsystem to link against.
       # We also need the .o files for various low-level boot stuff.
-      cp -d ${darwin.Libsystem}/lib/*.o $out/lib
-      cp -d ${darwin.Libsystem}/lib/system/*.dylib $out/lib/system
+      cp -d ${darwin.Libsystem}/lib/*.o   $out/lib
+      cp --preserve=links -d ${darwin.Libsystem}/lib/*.tbd        $out/lib
+      cp --preserve=links -d ${darwin.Libsystem}/lib/system/*.tbd $out/lib/system
 
       # Resolv is actually a link to another package, so let's copy it properly
       cp -L ${darwin.Libsystem}/lib/libresolv.9.dylib $out/lib
@@ -208,39 +208,6 @@ in rec {
           echo patching $i
           install_name_tool -add_rpath $out/lib $i || true
         fi
-      done
-
-      install_name_tool \
-        -id $out/lib/system/libsystem_c.dylib \
-        $out/lib/system/libsystem_c.dylib
-
-      install_name_tool \
-        -id $out/lib/system/libsystem_kernel.dylib \
-        $out/lib/system/libsystem_kernel.dylib
-
-      # TODO: this logic basically duplicates similar logic in the Libsystem expression. Deduplicate them!
-      libs=$(cat $reexportedLibrariesFile | grep -v '^#')
-
-      for i in $libs; do
-        if [ "$i" != "/usr/lib/system/libsystem_kernel.dylib" ] && [ "$i" != "/usr/lib/system/libsystem_c.dylib" ]; then
-          args="$args -reexport_library $i"
-        fi
-      done
-
-      ld -macosx_version_min 10.7 \
-         -arch x86_64 \
-         -dylib \
-         -o $out/lib/libSystem.B.dylib \
-         -compatibility_version 1.0 \
-         -current_version 1226.10.1 \
-         -reexport_library $out/lib/system/libsystem_c.dylib \
-         -reexport_library $out/lib/system/libsystem_kernel.dylib \
-         $args
-
-      ln -s libSystem.B.dylib $out/lib/libSystem.dylib
-
-      for name in c dbm dl info m mx poll proc pthread rpcsvc util gcc_s.10.4 gcc_s.10.5; do
-        ln -s libSystem.dylib $out/lib/lib$name.dylib
       done
 
       ln -s libresolv.9.dylib $out/lib/libresolv.dylib
