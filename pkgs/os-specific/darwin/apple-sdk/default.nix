@@ -99,7 +99,7 @@ let
           current="$(readlink "/System/Library/Frameworks/$name.framework/Versions/Current")"
           cp -R "${sdk.out}/Library/Frameworks/$name.framework/Versions/$current/Headers" .
         fi
-        ln -s -L "/System/Library/Frameworks/$nested_path/Versions/$current/$name"
+        ln -s -L "${./frameworks-tbd}/System/Library/Frameworks/$nested_path/Versions/$current/$name.tbd"
         ln -s -L "/System/Library/Frameworks/$nested_path/Versions/$current/Resources"
 
         if [ -f "/System/Library/Frameworks/$nested_path/module.map" ]; then
