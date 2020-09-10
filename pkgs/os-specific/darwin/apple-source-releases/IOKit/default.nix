@@ -17,7 +17,7 @@ appleDerivation {
     ###### IMPURITIES
     mkdir -p $out/Library/Frameworks/IOKit.framework
     pushd $out/Library/Frameworks/IOKit.framework
-    ln -s /System/Library/Frameworks/IOKit.framework/IOKit
+    ln -s ${../../apple-sdk/frameworks-tbd}/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit.tbd
     ln -s /System/Library/Frameworks/IOKit.framework/Resources
     popd
 

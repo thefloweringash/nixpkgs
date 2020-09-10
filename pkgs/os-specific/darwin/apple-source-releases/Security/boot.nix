@@ -15,7 +15,7 @@ appleDerivation {
     ###### IMPURITIES
     mkdir -p $out/Library/Frameworks/Security.framework
     pushd $out/Library/Frameworks/Security.framework
-    ln -s /System/Library/Frameworks/Security.framework/Security
+    ln -s ${../../apple-sdk/frameworks-tbd}/System/Library/Frameworks/Security.framework/Versions/A/Security.tbd
     ln -s /System/Library/Frameworks/Security.framework/Resources
     ln -s /System/Library/Frameworks/Security.framework/PlugIns
     ln -s /System/Library/Frameworks/Security.framework/XPCServices
