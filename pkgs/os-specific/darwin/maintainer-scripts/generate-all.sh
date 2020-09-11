@@ -36,3 +36,5 @@ cleandir() {
 
 ./frameworks-tbd.sh -s "$sysroot" \
   -o "$(cleandir ../apple-sdk/frameworks-tbd)"
+
+./link-frameworks.rb '../apple-sdk/frameworks-tbd/**/*.tbd'
