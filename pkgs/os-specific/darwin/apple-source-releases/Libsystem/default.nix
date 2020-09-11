@@ -88,7 +88,9 @@ appleDerivation {
     # The startup object files
     cp ${Csu}/lib/* $out/lib
 
-    cp -vr ${./tbd}/* $out/lib
+    cp -vr ${./tbd/usr/lib}/* $out/lib
+    substituteInPlace $out/lib/libSystem.B.tbd \
+      --replace "/usr/lib/system/" "$out/lib/system/"
     ln -s libSystem.B.tbd $out/lib/libSystem.tbd
 
     # Set up links to pretend we work like a conventional unix (Apple's design, not mine!)
