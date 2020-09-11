@@ -4,6 +4,8 @@
 
 let
   apple-source-releases = callPackage ../os-specific/darwin/apple-source-releases { };
+
+  print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports {};
 in
 
 (apple-source-releases // {
@@ -14,7 +16,9 @@ in
     extraBuildInputs = [];
   };
 
-  apple_sdk = callPackage ../os-specific/darwin/apple-sdk { };
+  apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
+    inherit print-reexports;
+  };
 
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (darwin) cctools;
@@ -92,4 +96,5 @@ in
     inherit (darwin.apple_sdk.frameworks) Cocoa;
   };
 
+  inherit print-reexports;
 })
