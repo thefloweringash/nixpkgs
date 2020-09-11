@@ -5,8 +5,6 @@ set -euo pipefail
 
 # Generate TBD files for libsystem by inspecting the host system
 # - Requires Xcode installed to generate (TODO: use libtapi instead)
-# - Outputs to $PWD/tbd
-# - Handles re-exported libraries with naive recursion
 
 log() {
   echo "$@" >&2
@@ -16,11 +14,35 @@ tapi() {
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/tapi "$@"
 }
 
-out=${GEN_TBD_OUT:-$PWD/tbd}
+out=$PWD/tbd
+sysroot=/
+recur=
+append=
+
+while getopts "o:s:ra" opt; do
+  case $opt in
+    o) # output-dir
+      out=$OPTARG
+      ;;
+    s) # sysroot
+      sysroot=$OPTARG
+      ;;
+    r) # recurse into re-exported libraries
+      recur=1
+      ;;
+    a) # append re-exports
+      append=1
+      ;;
+    \?)
+      log "invalid option specified"
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
 
 mkdir -p $out
-
-sysroot=${GEN_TBD_SYSROOT:-/}
 
 result_name() {
   local lib=$1
@@ -41,7 +63,7 @@ export_library() {
 
   reexports=($(yq -r '.exports[]."re-exports" | if . == null then [] else . end | .[]' "$result"))
 
-  if [ "${#reexports[@]}" -gt 0 ]; then
+  if [ "$recur" ] && [ "${#reexports[@]}" -gt 0 ]; then
     log "Discovered ${#reexports[@]} re-exported libraries"
 
     for exported_lib in "${reexports[@]}"; do
@@ -52,9 +74,11 @@ export_library() {
       log "Processing re-exported library: $exported_lib"
       export_library "$exported_lib"
 
-      reexported_result=$(result_name "$exported_lib")
-      log -e "Appending re-exported library\n\tfrom: $reexported_result\n\tto: $result"
-      cat "$reexported_result" >> "$result"
+      if [ "$append" ]; then
+        reexported_result=$(result_name "$exported_lib")
+        log -e "Appending re-exported library\n\tfrom: $reexported_result\n\tto: $result"
+        cat "$reexported_result" >> "$result"
+      fi
     done
 
     # Fixup manually combined yaml documents: remove end of document
@@ -64,4 +88,10 @@ export_library() {
   fi
 }
 
-export_library "${1:-/usr/lib/libSystem.B.dylib}"
+if [ "$#" -eq 0 ]; then
+  log "No libraries specified, nothing to do!"
+fi
+
+for library in "$@"; do
+  export_library "$library"
+done
