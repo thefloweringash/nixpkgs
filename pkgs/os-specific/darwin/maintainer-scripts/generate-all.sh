@@ -34,6 +34,10 @@ cleandir() {
   /usr/lib/libcupsmime.1.dylib \
   /usr/lib/libcupsppdc.1.dylib
 
+./stubify.sh -s "$sysroot" \
+  -o "$(cleandir ../apple-sdk/libXplugin-tbd)" \
+  /usr/lib/libXplugin.1.dylib
+
 ./frameworks-tbd.sh -s "$sysroot" \
   -o "$(cleandir ../apple-sdk/frameworks-tbd)"
 
