@@ -228,7 +228,8 @@ in rec {
       installPhase = ''
         mkdir -p $out/include $out/lib
         ln -s "${lib.getDev sdk}/include/Xplugin.h" $out/include/Xplugin.h
-        ln -s "/usr/lib/libXplugin.1.dylib" $out/lib/libXplugin.dylib
+        cp ${./libXplugin-tbd}/usr/lib/libXplugin.1.tbd $out/lib
+        ln -s libXplugin.1.tbd $out/lib/libXplugin.tbd
       '';
     };
 
