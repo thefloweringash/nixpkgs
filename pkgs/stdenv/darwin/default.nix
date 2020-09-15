@@ -282,12 +282,10 @@ in rec {
   stage2 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
-        zlib patchutils m4 scons flex perl bison unzip openssl python3
-        libxml2 gettext sharutils gmp libarchive ncurses pkg-config libedit groff
-        openssh sqlite sed serf openldap db cyrus-sasl expat apr-util subversion xz
-        findfreetype libssh curl cmake autoconf automake libtool coreutils
-        libssh2 nghttp2 libkrb5 ninja gnugrep libffi binutils libiconv
-        binutils-unwrapped;
+        zlib m4 flex perl bison unzip openssl python3 libxml2 gettext ncurses
+        xz curl cmake autoconf automake libtool coreutils libssh2 nghttp2
+        libkrb5 ninja gnugrep binutils libiconv binutils-unwrapped
+        patchutils_0_3_3;
 
       llvmPackages_7 = super.llvmPackages_7 // (let
         tools = super.llvmPackages_7.tools.extend (_: _: {
@@ -301,8 +299,7 @@ in rec {
       darwin = super.darwin // {
         # TODO: why are we keeping these?
         inherit (darwin)
-          binutils-unwrapped ICU objc4 libiconv
-          CF cctools libtapi;
+          binutils-unwrapped ICU objc4 libiconv CF cctools libtapi;
 
         binutils = darwin.binutils.override {
           libc = self.darwin.Libsystem;
@@ -336,12 +333,9 @@ in rec {
   stage3 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
-        patchutils m4 scons flex perl bison unifdef unzip openssl python3
-        gettext sharutils libarchive pkg-config groff bash subversion
-        openssh sqlite sed serf openldap db cyrus-sasl expat apr-util
-        findfreetype libssh curl cmake autoconf automake libtool cpio
-        libssh2 nghttp2 libkrb5 ninja coreutils gnugrep
-        binutils-unwrapped xz ncurses zlib;
+        m4 flex perl bison openssl python3 gettext pkg-config bash libssh curl
+        cmake autoconf automake libtool cpio libssh2 nghttp2 libkrb5 ninja
+        coreutils gnugrep binutils-unwrapped xz ncurses zlib patchutils_0_3_3;
 
       # Avoid pulling in a full python and its extra dependencies for the llvm/clang builds.
       libxml2 = super.libxml2.override { pythonSupport = false; };
