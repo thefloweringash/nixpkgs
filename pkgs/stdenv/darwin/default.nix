@@ -329,13 +329,13 @@ in rec {
   };
 
   # Birth an entire clang toolchain from the bootstrap toolchain, including all
-  # of clang-unwrapped, compiler-rt, libc++ and libc++abi.
+  # of clang-unwrapped, compiler-rt, libc++ and libc++abi, as well as ncurses.
   stage3 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
         m4 flex perl bison openssl python3 gettext pkg-config bash libssh curl
         cmake autoconf automake libtool cpio libssh2 nghttp2 libkrb5 ninja
-        coreutils gnugrep binutils-unwrapped xz ncurses zlib patchutils_0_3_3;
+        coreutils gnugrep binutils-unwrapped xz zlib patchutils_0_3_3;
 
       # Avoid pulling in a full python and its extra dependencies for the llvm/clang builds.
       libxml2 = super.libxml2.override { pythonSupport = false; };
@@ -366,10 +366,10 @@ in rec {
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs; [
-        libiconv gettext ncurses xz.bin xz.out bash binutils-unwrapped
+        libiconv gettext xz.bin xz.out bash binutils-unwrapped
         libcxx libcxxabi llvmPackages_7.compiler-rt llvmPackages_7.clang-unwrapped
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5 coreutils gnugrep
+        nghttp2.lib libkrb5 coreutils gnugrep ncurses
       ]) ++
       (with pkgs.darwin; [
         binutils binutils-unwrapped binutils.expand-response-params
@@ -383,16 +383,16 @@ in rec {
   stage4 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
-        bash python3 ncurses libffi zlib cmake patchutils ninja libxml2;
+        python3 ncurses libffi zlib cmake patchutils ninja libxml2;
 
-      # Hack to make sure we don't link ncurses in bootstrap tools. The proper
-      # solution is to avoid passing -L/nix-store/...-bootstrap-tools/lib,
-      # quite a sledgehammer just to get the C runtime.
-      gettext = super.gettext.overrideAttrs (drv: {
-        configureFlags = drv.configureFlags ++ [
-          "--disable-curses"
-        ];
-      });
+      # # Hack to make sure we don't link ncurses in bootstrap tools. The proper
+      # # solution is to avoid passing -L/nix-store/...-bootstrap-tools/lib,
+      # # quite a sledgehammer just to get the C runtime.
+      # gettext = super.gettext.overrideAttrs (drv: {
+      #   configureFlags = drv.configureFlags ++ [
+      #     "--disable-curses"
+      #   ];
+      # });
 
       llvmPackages_7 = super.llvmPackages_7 // (let
         tools = super.llvmPackages_7.tools.extend (llvmSelf: _: {
@@ -404,7 +404,7 @@ in rec {
       in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // rec {
-        inherit (darwin) dyld locale;
+        inherit (darwin) dyld locale Libsystem;
 
         CF = super.darwin.CF.override {
           inherit libxml2;
