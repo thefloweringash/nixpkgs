@@ -396,8 +396,7 @@ in rec {
 
       llvmPackages_7 = super.llvmPackages_7 // (let
         tools = super.llvmPackages_7.tools.extend (llvmSelf: _: {
-          clang-unwrapped = llvmPackages_7.clang-unwrapped.override { llvm = llvmSelf.llvm; };
-          llvm = llvmPackages_7.llvm.override { inherit libxml2; };
+          inherit (llvmPackages_7) clang-unwrapped llvm;
         });
         libraries = super.llvmPackages_7.libraries.extend (llvmSelf: _: {
           inherit (llvmPackages_7) libcxx libcxxabi compiler-rt;
@@ -444,7 +443,8 @@ in rec {
       in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // {
-        inherit (darwin) dyld ICU Libsystem libiconv;
+        inherit (darwin) CF dyld ICU Libsystem libiconv;
+        xnu = super.darwin.xnu.override { inherit python3; };
       } // lib.optionalAttrs (super.stdenv.targetPlatform == localSystem) {
         inherit (darwin) binutils binutils-unwrapped cctools;
       };
@@ -473,10 +473,7 @@ in rec {
     initialPath = import ../common-path.nix { inherit pkgs; };
     shell       = "${pkgs.bash}/bin/bash";
 
-    cc = pkgs.llvmPackages.libcxxClang.override {
-      cc = pkgs.llvmPackages.clang-unwrapped;
-    };
-
+    cc = pkgs.llvmPackages.libcxxClang;
     extraNativeBuildInputs = [];
     extraBuildInputs = [ pkgs.darwin.CF ];
 
@@ -499,16 +496,7 @@ in rec {
       dyld Libsystem CF cctools ICU libiconv locale libtapi
     ]);
 
-    overrides = lib.composeExtensions persistent (self: super: {
-      clang = cc;
-      llvmPackages = super.llvmPackages // { clang = cc; };
-      inherit cc;
-
-      darwin = super.darwin // {
-        inherit (prevStage.darwin) CF;
-        xnu = super.darwin.xnu.override { inherit (prevStage) python3; };
-      };
-    });
+    overrides = persistent;
   };
 
   stagesDarwin = [
