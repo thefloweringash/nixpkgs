@@ -74,36 +74,8 @@ in rec {
         inherit (last) stdenv;
       };
 
-      mkExtraBuildCommands = cc: ''
-        rsrc="$out/resource-root"
-        mkdir "$rsrc"
-        ln -s "${cc}/lib/clang/${cc.version}/include" "$rsrc"
-        ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
-        echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
-      '';
-
-      mkCC = overrides: import ../../build-support/cc-wrapper (
-        let args = {
-          inherit shell;
-          inherit (last) stdenvNoCC;
-
-          nativeTools  = false;
-          nativeLibc   = false;
-          inherit buildPackages libcxx;
-          inherit (last.pkgs) coreutils gnugrep;
-          bintools     = last.pkgs.darwin.binutils;
-          libc         = last.pkgs.darwin.Libsystem;
-          isClang      = true;
-          cc           = last.pkgs.llvmPackages_7.clang-unwrapped;
-        }; in args // (overrides args));
-
-      cc = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
-        extraPackages = [
-          last.pkgs.llvmPackages_7.libcxxabi
-          last.pkgs.llvmPackages_7.compiler-rt
-        ];
-        extraBuildCommands = mkExtraBuildCommands cc;
-      });
+      cc = if last == null then "/dev/null" else
+        last.pkgs.llvmPackages_7.libcxxClang;
 
       thisStdenv = import ../generic {
         name = "${name}-stdenv-darwin";
@@ -180,43 +152,47 @@ in rec {
         };
       };
 
-      llvmPackages_7 = {
-        clang-unwrapped = {
-          name = "bootstrap-stage0-clang-unwrapped";
-          outPath = bootstrapTools;
-          version = bootstrapClangVersion;
-        };
-
-        libcxx = stdenv.mkDerivation {
-          name = "bootstrap-stage0-libcxx";
-          phases = [ "installPhase" "fixupPhase" ];
-          installPhase = ''
-            mkdir -p $out/lib $out/include
-            ln -s ${bootstrapTools}/lib/libc++.dylib $out/lib/libc++.dylib
-            ln -s ${bootstrapTools}/include/c++      $out/include/c++
-          '';
-          passthru = {
-            isLLVM = true;
+      llvmPackages_7 = super.llvmPackages_7 // (let
+        tools = super.llvmPackages_7.tools.extend (_: _: {
+          clang-unwrapped = {
+            name = "bootstrap-stage0-clang-unwrapped";
+            outPath = bootstrapTools;
+            version = bootstrapClangVersion;
           };
-        };
+        });
 
-        libcxxabi = stdenv.mkDerivation {
-          name = "bootstrap-stage0-libcxxabi";
-          buildCommand = ''
-            mkdir -p $out/lib
-            ln -s ${bootstrapTools}/lib/libc++abi.dylib $out/lib/libc++abi.dylib
-          '';
-        };
+        libraries = super.llvmPackages_7.libraries.extend (_: _: {
+          libcxx = stdenv.mkDerivation {
+            name = "bootstrap-stage0-libcxx";
+            phases = [ "installPhase" "fixupPhase" ];
+            installPhase = ''
+              mkdir -p $out/lib $out/include
+              ln -s ${bootstrapTools}/lib/libc++.dylib $out/lib/libc++.dylib
+              ln -s ${bootstrapTools}/include/c++      $out/include/c++
+            '';
+            passthru = {
+              isLLVM = true;
+            };
+          };
 
-        compiler-rt = stdenv.mkDerivation {
-          name = "bootstrap-stage0-compiler-rt";
-          buildCommand = ''
-            mkdir -p $out/lib
-            ln -s ${bootstrapTools}/lib/libclang_rt* $out/lib
-            ln -s ${bootstrapTools}/lib/darwin       $out/lib/darwin
-          '';
-        };
-      };
+          libcxxabi = stdenv.mkDerivation {
+            name = "bootstrap-stage0-libcxxabi";
+            buildCommand = ''
+              mkdir -p $out/lib
+              ln -s ${bootstrapTools}/lib/libc++abi.dylib $out/lib/libc++abi.dylib
+            '';
+          };
+
+          compiler-rt = stdenv.mkDerivation {
+            name = "bootstrap-stage0-compiler-rt";
+            buildCommand = ''
+              mkdir -p $out/lib
+              ln -s ${bootstrapTools}/lib/libclang_rt* $out/lib
+              ln -s ${bootstrapTools}/lib/darwin       $out/lib/darwin
+            '';
+          };
+        });
+      in { inherit tools libraries; } // tools // libraries);
     };
 
     extraNativeBuildInputs = [];
@@ -239,10 +215,13 @@ in rec {
       ninja = super.ninja.override { buildDocs = false; };
 
       llvmPackages_7 = super.llvmPackages_7 // (let
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
-          inherit (llvmPackages_7) clang-unwrapped compiler-rt libcxx libcxxabi;
+        tools = super.llvmPackages_7.tools.extend (_: _: {
+          inherit (llvmPackages_7) clang-unwrapped;
         });
-      in { inherit libraries; } // libraries);
+        libraries = super.llvmPackages_7.libraries.extend (_: _: {
+          inherit (llvmPackages_7) compiler-rt libcxx libcxxabi;
+        });
+      in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // {
         inherit (darwin)
@@ -283,10 +262,13 @@ in rec {
         binutils-unwrapped;
 
       llvmPackages_7 = super.llvmPackages_7 // (let
-        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
-          inherit (llvmPackages_7) clang-unwrapped compiler-rt libcxx libcxxabi;
+        tools = super.llvmPackages_7.tools.extend (_: _: {
+          inherit (llvmPackages_7) clang-unwrapped;
         });
-      in { inherit libraries; } // libraries);
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
+          inherit (llvmPackages_7) compiler-rt libcxx libcxxabi;
+        });
+      in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // {
         # TODO: why are we keeping these?
