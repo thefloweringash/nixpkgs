@@ -282,10 +282,10 @@ in rec {
   stage2 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
-        zlib patchutils m4 scons flex perl bison unifdef unzip openssl python3
+        zlib patchutils m4 scons flex perl bison unzip openssl python3
         libxml2 gettext sharutils gmp libarchive ncurses pkg-config libedit groff
         openssh sqlite sed serf openldap db cyrus-sasl expat apr-util subversion xz
-        findfreetype libssh curl cmake autoconf automake libtool ed cpio coreutils
+        findfreetype libssh curl cmake autoconf automake libtool coreutils
         libssh2 nghttp2 libkrb5 ninja gnugrep libffi binutils libiconv
         binutils-unwrapped;
 
@@ -301,8 +301,8 @@ in rec {
       darwin = super.darwin // {
         # TODO: why are we keeping these?
         inherit (darwin)
-          binutils-unwrapped dyld xnu configd ICU libdispatch libclosure
-          launchd CF cctools libtapi;
+          binutils-unwrapped ICU objc4 libiconv
+          CF cctools libtapi;
 
         binutils = darwin.binutils.override {
           libc = self.darwin.Libsystem;
@@ -323,10 +323,10 @@ in rec {
       (with pkgs; [
         xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
+        nghttp2.lib libkrb5 coreutils gnugrep libiconv
         binutils binutils-unwrapped gettext ncurses
       ]) ++
-      (with pkgs.darwin; [ binutils-unwrapped cctools dyld Libsystem CF ICU libtapi locale ]);
+      (with pkgs.darwin; [ binutils-unwrapped cctools Libsystem CF ICU libtapi locale objc4 ]);
 
     overrides = persistent;
   };
@@ -340,15 +340,16 @@ in rec {
         gettext sharutils libarchive pkg-config groff bash subversion
         openssh sqlite sed serf openldap db cyrus-sasl expat apr-util
         findfreetype libssh curl cmake autoconf automake libtool cpio
-        libssh2 nghttp2 libkrb5 ninja coreutils gnugrep libiconv
-        binutils-unwrapped;
+        libssh2 nghttp2 libkrb5 ninja coreutils gnugrep
+        binutils-unwrapped xz ncurses zlib;
 
       # Avoid pulling in a full python and its extra dependencies for the llvm/clang builds.
       libxml2 = super.libxml2.override { pythonSupport = false; };
 
       darwin = super.darwin // {
         inherit (darwin)
-          binutils binutils-unwrapped dyld Libsystem xnu configd libdispatch libclosure launchd libiconv locale cctools libtapi;
+          binutils binutils-unwrapped dyld Libsystem xnu configd libiconv
+          libdispatch libclosure launchd locale cctools libtapi objc4 CF;
       };
     };
   in with prevStage; stageFun 3 prevStage {
@@ -388,7 +389,7 @@ in rec {
   stage4 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
-        bash python3 ncurses libffi zlib pcre cmake patchutils ninja libxml2;
+        bash python3 ncurses libffi zlib cmake patchutils ninja libxml2;
 
       # Hack to make sure we don't link ncurses in bootstrap tools. The proper
       # solution is to avoid passing -L/nix-store/...-bootstrap-tools/lib,
@@ -410,7 +411,7 @@ in rec {
       in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // rec {
-        inherit (darwin) dyld Libsystem libiconv locale;
+        inherit (darwin) dyld locale;
 
         CF = super.darwin.CF.override {
           inherit libxml2;
