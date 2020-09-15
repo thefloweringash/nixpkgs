@@ -74,8 +74,36 @@ in rec {
         inherit (last) stdenv;
       };
 
-      cc = if last == null then "/dev/null" else
-        last.pkgs.llvmPackages_7.libcxxClang;
+      mkExtraBuildCommands = cc: ''
+        rsrc="$out/resource-root"
+        mkdir "$rsrc"
+        ln -s "${cc}/lib/clang/${cc.version}/include" "$rsrc"
+        ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
+        echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
+      '';
+
+      mkCC = overrides: import ../../build-support/cc-wrapper (
+        let args = {
+          inherit shell;
+          inherit (last) stdenvNoCC;
+
+          nativeTools  = false;
+          nativeLibc   = false;
+          inherit buildPackages libcxx;
+          inherit (last.pkgs) coreutils gnugrep;
+          bintools     = last.pkgs.darwin.binutils;
+          libc         = last.pkgs.darwin.Libsystem;
+          isClang      = true;
+          cc           = last.pkgs.llvmPackages_7.clang-unwrapped;
+        }; in args // (overrides args));
+
+      cc = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
+        extraPackages = [
+          last.pkgs.llvmPackages_7.libcxxabi
+          last.pkgs.llvmPackages_7.compiler-rt
+        ];
+        extraBuildCommands = mkExtraBuildCommands cc;
+      });
 
       thisStdenv = import ../generic {
         name = "${name}-stdenv-darwin";
