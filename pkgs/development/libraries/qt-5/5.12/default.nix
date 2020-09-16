@@ -72,6 +72,10 @@ let
         # See https://github.com/NixOS/nixpkgs/issues/52457
         ./qtbase.patch.d/0014-qtbase-pkg-config.patch
 
+        # Patch framework detection to support X.framework/X.tbd,
+        # extending the current support for X.framework/X.
+        ./qtbase.patch.d/0015-qtbase-tbd-frameworks.patch
+
         # https://bugreports.qt.io/browse/QTBUG-81715
         # remove after updating to qt > 5.12.7
         (fetchpatch {
