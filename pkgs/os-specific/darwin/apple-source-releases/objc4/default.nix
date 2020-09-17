@@ -1,4 +1,4 @@
-{ appleDerivation }:
+{ appleDerivation, darwin-stubs }:
 
 appleDerivation {
   phases = [ "unpackPhase" "installPhase" ];
@@ -14,7 +14,7 @@ appleDerivation {
 
   installPhase = ''
     mkdir -p $out/include/objc $out/lib
-    cp ${./libobjc.A.tbd} $out/lib/libobjc.A.tbd
+    cp ${darwin-stubs}/usr/lib/libobjc.A.tbd $out/lib/libobjc.A.tbd
     ln -s libobjc.A.tbd $out/lib/libobjc.tbd
     cp runtime/OldClasses.subproj/List.h $out/include/objc/List.h
     cp runtime/NSObjCRuntime.h $out/include/objc/NSObjCRuntime.h

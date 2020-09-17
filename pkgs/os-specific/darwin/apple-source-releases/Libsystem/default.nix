@@ -1,7 +1,7 @@
 { stdenv, appleDerivation, cpio, xnu, Libc, Libm, libdispatch, cctools, Libinfo
 , dyld, Csu, architecture, libclosure, CarbonHeaders, ncurses, CommonCrypto
 , copyfile, removefile, libresolv, Libnotify, libplatform, libpthread
-, mDNSResponder, launchd, libutil, hfs, darling }:
+, mDNSResponder, launchd, libutil, hfs, darling, darwin-stubs }:
 
 appleDerivation {
   dontBuild = true;
@@ -88,7 +88,11 @@ appleDerivation {
     # The startup object files
     cp ${Csu}/lib/* $out/lib
 
-    cp -vr ${./tbd/usr/lib}/* $out/lib
+    cp -vr \
+      ${darwin-stubs}/usr/lib/libSystem.B.tbd \
+      ${darwin-stubs}/usr/lib/system \
+      $out/lib
+
     substituteInPlace $out/lib/libSystem.B.tbd \
       --replace "/usr/lib/system/" "$out/lib/system/"
     ln -s libSystem.B.tbd $out/lib/libSystem.tbd

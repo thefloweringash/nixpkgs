@@ -254,7 +254,8 @@ in rec {
 
       darwin = super.darwin // {
         inherit (darwin)
-          dyld Libsystem xnu configd ICU libdispatch libclosure launchd CF;
+          dyld Libsystem xnu configd ICU libdispatch libclosure launchd CF
+          darwin-stubs;
       };
     };
   in with prevStage; stageFun 2 prevStage {
@@ -298,7 +299,8 @@ in rec {
 
       darwin = super.darwin // {
         inherit (darwin)
-          dyld Libsystem xnu configd libdispatch libclosure launchd libiconv locale;
+          dyld Libsystem xnu configd libdispatch libclosure launchd libiconv
+          locale darwin-stubs;
       };
     };
   in with prevStage; stageFun 3 prevStage {
@@ -356,7 +358,7 @@ in rec {
       in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // rec {
-        inherit (darwin) dyld Libsystem libiconv locale;
+        inherit (darwin) dyld Libsystem libiconv locale darwin-stubs;
 
         CF = super.darwin.CF.override {
           inherit libxml2;
@@ -455,7 +457,7 @@ in rec {
       inherit cc;
 
       darwin = super.darwin // {
-        inherit (prevStage.darwin) CF;
+        inherit (prevStage.darwin) CF darwin-stubs;
         xnu = super.darwin.xnu.override { inherit (prevStage) python3; };
       };
     });

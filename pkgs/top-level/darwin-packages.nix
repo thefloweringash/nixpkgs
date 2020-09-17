@@ -4,12 +4,9 @@
 
 let
   apple-source-releases = callPackage ../os-specific/darwin/apple-source-releases { };
-
-  print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports {};
 in
 
 (apple-source-releases // {
-
   callPackage = newScope (darwin.apple_sdk.frameworks // darwin);
 
   stdenvNoCF = stdenv.override {
@@ -17,7 +14,7 @@ in
   };
 
   apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
-    inherit print-reexports;
+    inherit (darwin) darwin-stubs print-reexports;
   };
 
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
@@ -44,6 +41,10 @@ in
   cf-private = darwin.apple_sdk.frameworks.CoreFoundation;
 
   DarwinTools = callPackage ../os-specific/darwin/DarwinTools { };
+
+  darwin-stubs = callPackage ../os-specific/darwin/darwin-stubs { };
+
+  print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports { };
 
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
@@ -95,6 +96,4 @@ in
   discrete-scroll = callPackage ../os-specific/darwin/discrete-scroll {
     inherit (darwin.apple_sdk.frameworks) Cocoa;
   };
-
-  inherit print-reexports;
 })

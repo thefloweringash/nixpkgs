@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, xar, cpio, pkgs, python3, pbzx, lib, print-reexports }:
+{ stdenv, fetchurl, xar, cpio, pkgs, python3, pbzx, lib, darwin-stubs, print-reexports }:
 
 let version = "10.12"; in
 
@@ -42,7 +42,7 @@ let
       rmdir System
 
       pushd lib
-      cp ${./libcups-tbd}/usr/lib/*.tbd .
+      cp ${darwin-stubs}/usr/lib/libcups*.tbd .
       ln -s libcups.2.tbd      libcups.tbd
       ln -s libcupscgi.1.tbd   libcupscgi.tbd
       ln -s libcupsimage.2.tbd libcupsimage.tbd
@@ -59,7 +59,7 @@ let
   };
 
   mkFrameworkSubs = name: deps:
-  let 
+  let
     deps' = deps // { "${name}" = placeholder "out"; };
     substArgs = lib.concatMap (x: [ "--subst-var-by" x deps'."${x}" ]) (lib.attrNames deps');
   in lib.escapeShellArgs substArgs;
@@ -106,7 +106,7 @@ let
           cp -R "${sdk.out}/Library/Frameworks/$name.framework/Versions/$current/Headers" .
         fi
 
-        local tbd_source=${./frameworks-tbd}/System/Library/Frameworks/$nested_path/Versions/$current
+        local tbd_source=${darwin-stubs}/System/Library/Frameworks/$nested_path/Versions/$current
         if [ "${name}" != "Kernel" ]; then
           cp -v $tbd_source/*.tbd .
         fi
@@ -143,7 +143,7 @@ let
 
       # linkFramework is recursive, the rest of the processing is not.
 
-      local tbd_source=${./frameworks-tbd}/System/Library/Frameworks/${name}.framework
+      local tbd_source=${darwin-stubs}/System/Library/Frameworks/${name}.framework
       for tbd in $extraTBDFiles; do
         local tbd_dest_dir=$out/Library/Frameworks/${name}.framework/$(dirname "$tbd")
         mkdir -p "$tbd_dest_dir"
@@ -194,7 +194,7 @@ let
     dontUnpack = true;
     installPhase = ''
       mkdir -p $out/Library/Frameworks/
-      cp -r ${./frameworks-tbd}/System/Library/${lib.optionalString private "Private"}Frameworks/${name}.framework \
+      cp -r ${darwin-stubs}/System/Library/${lib.optionalString private "Private"}Frameworks/${name}.framework \
         $out/Library/Frameworks
       # NOTE there's no re-export checking here, this is probably wrong
     '';
@@ -228,7 +228,7 @@ in rec {
       installPhase = ''
         mkdir -p $out/include $out/lib
         ln -s "${lib.getDev sdk}/include/Xplugin.h" $out/include/Xplugin.h
-        cp ${./libXplugin-tbd}/usr/lib/libXplugin.1.tbd $out/lib
+        cp ${darwin-stubs}/usr/lib/libXplugin.1.tbd $out/lib
         ln -s libXplugin.1.tbd $out/lib/libXplugin.tbd
       '';
     };
@@ -299,7 +299,7 @@ in rec {
     });
 
     WebKit = stdenv.lib.overrideDerivation super.WebKit (drv: {
-      extraTBDFiles = [ 
+      extraTBDFiles = [
         "Versions/A/Frameworks/WebCore.framework/Versions/A/WebCore.tbd"
         "Versions/A/Frameworks/WebKitLegacy.framework/Versions/A/WebKitLegacy.tbd"
       ];
