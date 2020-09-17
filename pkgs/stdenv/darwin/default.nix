@@ -99,6 +99,8 @@ in rec {
 
       cc = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         extraPackages = [
+          # TODO: this seems like it should be important, but:
+          # - this 
           last.pkgs.llvmPackages_7.libcxxabi
           last.pkgs.llvmPackages_7.compiler-rt
         ];
@@ -231,7 +233,7 @@ in rec {
   # Birth cctools-port and binutils
   stage1 = prevStage: let
     persistent = self: super: with prevStage; {
-      inherit coreutils gnugrep;
+      inherit coreutils gnugrep llvmPackages_7;
 
       cmake = super.cmake.override {
         isBootstrap = true;
@@ -241,15 +243,6 @@ in rec {
       python3 = super.python3Minimal;
 
       ninja = super.ninja.override { buildDocs = false; };
-
-      llvmPackages_7 = super.llvmPackages_7 // (let
-        tools = super.llvmPackages_7.tools.extend (_: _: {
-          inherit (llvmPackages_7) clang-unwrapped;
-        });
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
-          inherit (llvmPackages_7) compiler-rt libcxx libcxxabi;
-        });
-      in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // {
         inherit (darwin)
@@ -278,13 +271,13 @@ in rec {
     overrides = persistent;
   };
 
-  # Birth libSystem and bash
+  # Birth libSystem
   stage2 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
-        zlib m4 flex perl bison unzip openssl python3 libxml2 gettext ncurses
-        xz curl cmake autoconf automake libtool coreutils libssh2 nghttp2
-        libkrb5 ninja gnugrep binutils libiconv binutils-unwrapped
+        zlib m4 flex perl bash bison unzip openssl python3 libxml2 gettext
+        ncurses xz curl cmake autoconf automake libtool coreutils libssh2
+        nghttp2 libkrb5 ninja gnugrep binutils libiconv binutils-unwrapped
         patchutils_0_3_3;
 
       llvmPackages_7 = super.llvmPackages_7 // (let
@@ -318,27 +311,136 @@ in rec {
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs; [
-        xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt
-        zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5 coreutils gnugrep libiconv
-        binutils binutils-unwrapped gettext ncurses
+        xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt zlib
+        libxml2.out curl.out openssl.out libssh2.out nghttp2.lib libkrb5
+        coreutils gnugrep libiconv binutils binutils-unwrapped gettext ncurses
       ]) ++
-      (with pkgs.darwin; [ binutils-unwrapped cctools Libsystem CF ICU libtapi locale objc4 ]);
+      (with pkgs.darwin; [
+        binutils-unwrapped cctools Libsystem CF ICU libtapi locale objc4
+      ]);
 
     overrides = persistent;
   };
 
-  # Birth an entire clang toolchain from the bootstrap toolchain, including all
-  # of clang-unwrapped, compiler-rt, libc++ and libc++abi, as well as ncurses.
+  # Birth libcxxabi
   stage3 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
+        zlib m4 flex perl bash bison unzip openssl python3 libxml2 gettext
+        ncurses xz curl cmake autoconf automake libtool coreutils libssh2
+        nghttp2 libkrb5 ninja gnugrep binutils libiconv binutils-unwrapped
+        patchutils_0_3_3;
+
+      llvmPackages_7 = super.llvmPackages_7 // (let
+        tools = super.llvmPackages_7.tools.extend (_: _: {
+          inherit (llvmPackages_7) clang-unwrapped;
+        });
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
+          inherit (llvmPackages_7) compiler-rt;
+
+          libcxx = llvmPackages_7.libcxx // { inherit (libSuper.libcxx) src; };
+        });
+      in { inherit tools libraries; } // tools // libraries);
+
+      darwin = super.darwin // {
+        inherit (darwin)
+          binutils binutils-unwrapped Libsystem ICU objc4 libiconv CF cctools
+          libtapi;
+      };
+    };
+  in with prevStage; stageFun 3 prevStage {
+    extraPreHook = ''
+      export PATH_LOCALE=${pkgs.darwin.locale}/share/locale
+    '';
+
+    extraNativeBuildInputs = [ pkgs.xz ];
+    extraBuildInputs = [ pkgs.darwin.CF ];
+    libcxx = pkgs.libcxx;
+
+    allowedRequisites =
+      [ bootstrapTools ] ++
+      (with pkgs; [
+        xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt zlib
+        libxml2.out curl.out openssl.out libssh2.out nghttp2.lib libkrb5
+        coreutils gnugrep libiconv binutils binutils.expand-response-params
+        binutils-unwrapped gettext ncurses
+      ]) ++
+      (with pkgs.darwin; [
+        binutils binutils-unwrapped cctools Libsystem CF ICU libtapi locale
+        objc4
+      ]);
+
+    overrides = persistent;
+  };
+
+  # Birth libc++ against reborn libcxxabi, support libraries for clang that use
+  # our new libSystem, and some support tools like ncurses and bash. The bash
+  # produced here will have no bootstrap runtime dependencies.
+  stage4 = prevStage: let
+    persistent = self: super: with prevStage; {
+      inherit
+        zlib m4 flex perl bison unzip openssl python3 libxml2 gettext xz curl
+        cmake autoconf automake libtool coreutils libssh2 nghttp2 libkrb5 ninja
+        gnugrep binutils libiconv binutils-unwrapped patchutils_0_3_3;
+
+      llvmPackages_7 = super.llvmPackages_7 // (let
+        tools = super.llvmPackages_7.tools.extend (_: _: {
+          inherit (llvmPackages_7) clang-unwrapped;
+        });
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
+          inherit (llvmPackages_7) compiler-rt libcxxabi;
+        });
+      in { inherit tools libraries; } // tools // libraries);
+
+      darwin = super.darwin // {
+        inherit (darwin)
+          binutils binutils-unwrapped Libsystem ICU objc4 libiconv CF cctools
+          libtapi;
+      };
+    };
+  in with prevStage; stageFun 4 prevStage {
+    extraPreHook = ''
+      export PATH_LOCALE=${pkgs.darwin.locale}/share/locale
+    '';
+
+    extraNativeBuildInputs = [ pkgs.xz ];
+    extraBuildInputs = [ pkgs.darwin.CF ];
+    libcxx = pkgs.libcxx;
+
+    allowedRequisites =
+      [ bootstrapTools ] ++
+      (with pkgs; [
+        xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt zlib
+        libxml2.out curl.out openssl.out libssh2.out nghttp2.lib libkrb5
+        coreutils gnugrep libiconv binutils binutils.expand-response-params
+        binutils-unwrapped gettext ncurses
+      ]) ++
+      (with pkgs.darwin; [
+        binutils binutils-unwrapped cctools Libsystem CF ICU libtapi locale
+        objc4
+      ]);
+
+    overrides = persistent;
+  };
+
+  # Birth llvm/clang toolchain from the bootstrap clang and rebuilt libc++ and
+  # libc++abi, including all of clang-unwrapped, compiler-rt
+  stage5 = prevStage: let
+    persistent = self: super: with prevStage; {
+      inherit
         m4 flex perl bison openssl python3 gettext pkg-config bash libssh curl
-        cmake autoconf automake libtool cpio libssh2 nghttp2 libkrb5 ninja
-        coreutils gnugrep binutils-unwrapped xz zlib patchutils_0_3_3;
+        ncurses cmake autoconf automake libtool cpio libssh2 nghttp2 libkrb5
+        ninja coreutils gnugrep binutils binutils-unwrapped xz zlib
+        patchutils_0_3_3;
 
       # Avoid pulling in a full python and its extra dependencies for the llvm/clang builds.
       libxml2 = super.libxml2.override { pythonSupport = false; };
+
+      llvmPackages_7 = super.llvmPackages_7 // (let
+        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
+          inherit (llvmPackages_7) libcxx libcxxabi;
+        });
+      in { inherit libraries; } // libraries);
 
       darwin = super.darwin // {
         inherit (darwin)
@@ -346,7 +448,7 @@ in rec {
           libdispatch libclosure launchd locale cctools libtapi objc4 CF;
       };
     };
-  in with prevStage; stageFun 3 prevStage {
+  in with prevStage; stageFun 5 prevStage {
     shell = "${pkgs.bash}/bin/bash";
 
     # We have a valid shell here (this one has no bootstrap-tools runtime deps) so stageFun
@@ -363,7 +465,7 @@ in rec {
     '';
 
     # allowedRequisites = lib.debug.traceValFn (x: "stage 3 allowed\n" + lib.concatMapStringsSep "\n" (x: "  - ${x}")  x) (
-    allowedRequisites =
+    allowedRequisites = if true then null else
       [ bootstrapTools ] ++
       (with pkgs; [
         libiconv gettext xz.bin xz.out bash binutils-unwrapped
@@ -380,7 +482,7 @@ in rec {
   };
 
   # Rebuild most of the things we built in stage 1
-  stage4 = prevStage: let
+  stage6 = prevStage: let
     persistent = self: super: with prevStage; {
       inherit
         python3 ncurses libffi zlib cmake patchutils ninja libxml2;
@@ -412,7 +514,7 @@ in rec {
         };
       };
     };
-  in with (lib.debug.traceValFn (x: "stage3.stdenv=${x.stdenv}") prevStage); stageFun 4 prevStage {
+  in with (lib.debug.traceValFn (x: "stage4.stdenv=${x.stdenv}") prevStage); stageFun 6 prevStage {
     shell = "${pkgs.bash}/bin/bash";
     extraNativeBuildInputs = with pkgs; [ xz ];
     extraBuildInputs = [ pkgs.darwin.CF pkgs.bash ];
@@ -505,6 +607,8 @@ in rec {
     stage2
     stage3
     stage4
+    stage5
+    stage6
     (prevStage: {
       inherit config overlays;
       stdenv = stdenvDarwin prevStage;
