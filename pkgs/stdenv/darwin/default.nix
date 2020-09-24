@@ -189,7 +189,7 @@ in rec {
           nativeLibc   = false;
           inherit (self) buildPackages coreutils gnugrep;
           libc         = self.pkgs.darwin.Libsystem;
-          bintools     = { name = "bootstrap-stag0-binutils"; outPath = bootstrapTools; };
+          bintools     = { name = "bootstrap-stage0-binutils"; outPath = bootstrapTools; };
         };
       };
 
