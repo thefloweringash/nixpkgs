@@ -110,7 +110,7 @@ appleDerivation {
     chmod +w $out/lib/libresolv.9.dylib
     install_name_tool \
       -id $out/lib/libresolv.9.dylib \
-      -change "$resolv_libSystem" $out/lib/libSystem.dylib \
+      -change "$resolv_libSystem" /usr/lib/libSystem.dylib \
       $out/lib/libresolv.9.dylib
     ln -s libresolv.9.dylib $out/lib/libresolv.dylib
   '';
