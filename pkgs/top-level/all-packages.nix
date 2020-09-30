@@ -8731,9 +8731,12 @@ in
   }));
 
   crossLibcStdenv = overrideCC stdenv
-    (if stdenv.hostPlatform.useLLVM or false
-     then buildPackages.llvmPackages_8.lldClangNoLibc
-     else buildPackages.gccCrossStageStatic);
+    (if stdenv.hostPlatform.isDarwin
+      then buildPackages.stdenvNoCC
+     else if stdenv.hostPlatform.useLLVM or false
+       then buildPackages.llvmPackages_8.lldClangNoLibc
+     else
+       buildPackages.gccCrossStageStatic);
 
   # The GCC used to build libc for the target platform. Normal gccs will be
   # built with, and use, that cross-compiled libc.
@@ -10863,7 +10866,7 @@ in
   };
 
   # This is for e.g. LLVM libraries on linux.
-  gccForLibs =
+  gccForLibs = assert false;
     # with gcc-7: undefined reference to `__divmoddi4'
     if stdenv.targetPlatform.isi686
       then gcc6.cc
@@ -12609,7 +12612,7 @@ in
     else if name == "musl" then targetPackages.muslCross or muslCross
     else if name == "msvcrt" then targetPackages.windows.mingw_w64 or windows.mingw_w64
     else if stdenv.targetPlatform.useiOSPrebuilt then targetPackages.darwin.iosSdkPkgs.libraries or darwin.iosSdkPkgs.libraries
-    else if name == "libSystem" then targetPackages.darwin.xcode
+    else if name == "libSystem" then targetPackages.darwin.LibsystemCross or darwin.LibsystemCross
     else if name == "nblibc" then targetPackages.netbsdCross.libc
     else if name == "wasilibc" then targetPackages.wasilibc or wasilibc
     else if name == "relibc" then targetPackages.relibc or relibc
@@ -17438,7 +17441,31 @@ in
   # Even though this is a set of packages not single package, use `callPackage`
   # not `callPackages` so the per-package callPackages don't have their
   # `.override` clobbered. C.F. `llvmPackages` which does the same.
-  darwin = callPackage ./darwin-packages.nix { };
+  darwin = recurseIntoAttrs (import ./darwin-packages.nix {
+    inherit buildPackages pkgs targetPackages  darwin stdenv lib callPackages newScope;
+  });
+
+  splicetest = let
+    isSpliced = x: if x ? __spliced then "yes" else "no";
+
+    showSplices = attrs: x: builtins.trace (
+      "spliced? " + (lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "${k}=${isSpliced v}") attrs))
+    ) x;
+
+    showPlatforms = name: stdenv: builtins.trace (
+      "stdenv for ${name} = (${stdenv.buildPlatform.system}, ${stdenv.hostPlatform.system}, ${stdenv.targetPlatform.system})"
+    ) stdenv;
+  in
+  lib.makeScope newScope (self: with self; {
+    a = callPackage ({ stdenv }: (showPlatforms "a" stdenv).mkDerivation {
+      name = "a";
+    }) { };
+
+    b = callPackage ({ stdenv, hello, a }: (showPlatforms "b" stdenv).mkDerivation {
+      name = "b";
+      nativeBuildInputs = (showSplices { inherit hello a; }) [ a ];
+    }) { };
+  });
 
   disk_indicator = callPackage ../os-specific/linux/disk-indicator { };
 

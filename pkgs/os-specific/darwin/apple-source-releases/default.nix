@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, fetchzip, pkgs }:
+{ stdenv, lib, pkgs, newScope, callPackage, fetchurl, fetchzip }:
 
 let
   # This attrset can in theory be computed automatically, but for that to work nicely we need
@@ -139,7 +139,7 @@ let
     # When cross-compiling, fetchurl depends on libiconv, resulting
     # in an infinite recursion without this. It's not clear why this
     # worked fine when not cross-compiling
-    fetch = if name == "libiconv"
+    fetch = if true # name == "libiconv"
       then stdenv.fetchurlBoot
       else fetchurl;
   in fetch {
@@ -147,7 +147,7 @@ let
     inherit sha256;
   };
 
-  appleDerivation_ = name: version: sha256: attrs: stdenv.mkDerivation ({
+  appleDerivation_ = name: version: sha256: lib.makeOverridable ({ stdenv }: attrs: stdenv.mkDerivation ({
     inherit version;
     name = "${name}-${version}";
     enableParallelBuilding = true;
@@ -156,13 +156,13 @@ let
     };
   } // (if attrs ? srcs then {} else {
     src  = fetchApple version sha256 name;
-  }) // attrs);
+  }) // attrs)) { inherit stdenv; };
 
   applePackage = namePath: version: sha256:
     let
       name = builtins.elemAt (stdenv.lib.splitString "/" namePath) 0;
       appleDerivation = appleDerivation_ name version sha256;
-      callPackage = pkgs.newScope (packages // pkgs.darwin // { inherit appleDerivation name version; });
+      callPackage = newScope { inherit appleDerivation name version; };
     in callPackage (./. + "/${namePath}");
 
   IOKitSpecs = {
@@ -230,6 +230,9 @@ let
     Libsystem       = applePackage "Libsystem"         "osx-10.12.6"     "1082ircc1ggaq3wha218vmfa75jqdaqidsy1bmrc4ckfkbr3bwx2" {
       libutil = pkgs.darwin.libutil.override { headersOnly = true; };
       hfs = pkgs.darwin.hfs.override { headersOnly = true; };
+    };
+    LibsystemCross = pkgs.darwin.Libsystem.override {
+      # stdenv = crossLibcStdenv;
     };
     libutil         = applePackage "libutil"           "osx-10.12.6"     "0lqdxaj82h8yjbjm856jjz9k2d96k0viimi881akfng08xk1246y" {};
     libunwind       = applePackage "libunwind"         "osx-10.12.6"     "0miffaa41cv0lzf8az5k1j1ng8jvqvxcr4qrlkf3xyj479arbk1b" {};

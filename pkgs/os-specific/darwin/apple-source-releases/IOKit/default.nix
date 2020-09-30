@@ -1,7 +1,13 @@
-{ stdenv, appleDerivation, IOKitSrcs, xnu, darwin-stubs }:
+{ stdenv, stdenvNoCC, appleDerivation, IOKitSrcs, xnu, darwin-stubs }:
 
 # Someday it'll make sense to split these out into their own packages, but today is not that day.
-appleDerivation {
+let
+  appleDerivation_ = appleDerivation.override {
+    stdenv = stdenvNoCC;
+  };
+in
+
+appleDerivation_ {
   srcs = stdenv.lib.attrValues IOKitSrcs;
   sourceRoot = ".";
 

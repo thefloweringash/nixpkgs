@@ -1,6 +1,12 @@
-{ appleDerivation }:
+{ appleDerivation, stdenvNoCC }:
 
-appleDerivation {
+let
+  appleDerivation_ = appleDerivation.override {
+    stdenv = stdenvNoCC;
+  };
+in
+
+appleDerivation_ {
   phases = [ "unpackPhase" "installPhase" ];
 
   installPhase = ''
