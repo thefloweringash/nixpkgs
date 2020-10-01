@@ -7,7 +7,7 @@ let
 
   headers = fetchurl {
     url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/apple-silicon-wip/Libsystem-headers.tar.gz";
-    sha256 = "0wgmpqhg59qpa22ppw0ixwnnk402cp6f78ij072yrliacvgzk7vv";
+    sha256 = "11h4vg4zsws2kd3sy6xhfnzm0dc9gl5az0652csz2pf6axr111d6";
   };
 in
 
@@ -23,7 +23,7 @@ appleDerivation_ {
     mkdir -p $out/lib $out/include
 
     # Set up our include directories
-    tar --no-same-permissions -C $out -xf ${headers}
+    tar -C $out -xvf ${headers}
 
     cat <<EOF > $out/include/os/availability.h
     #ifndef __OS_AVAILABILITY__

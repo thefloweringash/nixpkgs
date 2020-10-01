@@ -3,6 +3,8 @@
   # on musl the shared objects don't build
 , enableShared ? ! stdenv.hostPlatform.isMusl }:
 
+assert (stdenv.hostPlatform != stdenv.buildPlatform) -> standalone;
+
 stdenv.mkDerivation {
   pname = "libc++abi";
   inherit version;
@@ -16,7 +18,7 @@ stdenv.mkDerivation {
     unpackFile ${llvm.src}
     cmakeFlagsArray=($cmakeFlagsArray -DLLVM_PATH=$PWD/$(ls -d llvm-*) -DLIBCXXABI_LIBCXX_PATH=$PWD/$(ls -d libcxx-*) )
   '' + stdenv.lib.optionalString stdenv.isDarwin ''
-    export TRIPLE=x86_64-apple-darwin
+    export TRIPLE=${stdenv.hostPlatform.parsed.cpu.name}-apple-darwin
   '' + stdenv.lib.optionalString stdenv.hostPlatform.isMusl ''
     patch -p1 -d $(ls -d libcxx-*) -i ${../libcxx-0001-musl-hacks.patch}
   '';
@@ -32,7 +34,7 @@ stdenv.mkDerivation {
         # the magic combination of necessary CMake variables
         # if you fancy a try, take a look at
         # https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling
-        install_name_tool -id $out/$file $file
+        ${stdenv.cc.targetPrefix}install_name_tool -id $out/$file $file
       done
       make install
       install -d 755 $out/include
