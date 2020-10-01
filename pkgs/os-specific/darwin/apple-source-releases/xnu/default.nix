@@ -1,9 +1,17 @@
-{ appleDerivation, lib, bootstrap_cmds, bison, flex
+{ stdenv, stdenvNoCC, appleDerivation, lib, buildPackages, bootstrap_cmds, bison, flex
 , gnum4, unifdef, perl, python3
 , headersOnly ? true }:
 
+assert headersOnly;
+
 appleDerivation ({
-  nativeBuildInputs = [ bootstrap_cmds bison flex gnum4 unifdef perl python3 ];
+  nativeBuildInputs = [
+    # packages in the same scope aren't spliced (#68967), so we need to provide
+    # the correct package directly.
+    buildPackages.darwin.bootstrap_cmds
+
+    bison flex gnum4 unifdef perl python3
+  ];
 
   patches = [ ./python3.patch ];
 

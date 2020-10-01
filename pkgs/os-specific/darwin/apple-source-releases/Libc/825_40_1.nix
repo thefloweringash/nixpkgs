@@ -1,6 +1,12 @@
-{ appleDerivation, ed, unifdef }:
+{ stdenvNoCC, appleDerivation, ed, unifdef }:
 
-appleDerivation {
+let
+  appleDerivation_ = appleDerivation.override {
+    stdenv = stdenvNoCC;
+  };
+in
+
+appleDerivation_ {
   nativeBuildInputs = [ ed unifdef ];
 
   installPhase = ''
