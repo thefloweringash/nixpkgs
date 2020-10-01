@@ -8922,10 +8922,26 @@ in
     stripped = false;
   }));
 
-  crossLibcStdenv = overrideCC stdenv
-    (if stdenv.hostPlatform.useLLVM or false
-     then buildPackages.llvmPackages_8.lldClangNoLibc
-     else buildPackages.gccCrossStageStatic);
+  crossLibcStdenv = overrideCC stdenv (
+    # TODO: why not this?
+    # if stdenv.hostPlatform.isDarwin
+      #then stdenvNoLibs
+    if stdenv.hostPlatform.isDarwin
+      then wrapCCWith {
+        nativeLibc = false;
+        nativeTools = false;
+        bintools = wrapBintoolsWith {
+          libc = null;
+          bintools = darwin.binutils-unwrapped;
+        };
+        libc = null;
+        isClang = true;
+        cc = llvmPackages_7.clang-unwrapped;
+      }
+    else if stdenv.hostPlatform.useLLVM or false
+      then buildPackages.llvmPackages_8.lldClangNoLibc
+    else buildPackages.gccCrossStageStatic
+  );
 
   # The GCC used to build libc for the target platform. Normal gccs will be
   # built with, and use, that cross-compiled libc.
@@ -12893,7 +12909,7 @@ julia_15 = callPackage ../development/compilers/julia/1.5.nix {
     else if name == "musl" then targetPackages.muslCross or muslCross
     else if name == "msvcrt" then targetPackages.windows.mingw_w64 or windows.mingw_w64
     else if stdenv.targetPlatform.useiOSPrebuilt then targetPackages.darwin.iosSdkPkgs.libraries or darwin.iosSdkPkgs.libraries
-    else if name == "libSystem" then targetPackages.darwin.xcode
+    else if name == "libSystem" then targetPackages.darwin.LibsystemCross or darwin.LibsystemCross
     else if name == "nblibc" then targetPackages.netbsdCross.libc
     else if name == "wasilibc" then targetPackages.wasilibc or wasilibc
     else if name == "relibc" then targetPackages.relibc or relibc

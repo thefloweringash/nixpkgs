@@ -1,4 +1,5 @@
-{ stdenv, fetchurl, fetchzip, pkgs }:
+{ stdenv, stdenvNoLibs, stdenvNoCC, overrideCC, lib, crossLibcStdenv, fetchurl, fetchzip
+, pkgs, llvmPackages_7, buildPackages }:
 
 let
   # This attrset can in theory be computed automatically, but for that to work nicely we need
@@ -139,7 +140,7 @@ let
     # When cross-compiling, fetchurl depends on libiconv, resulting
     # in an infinite recursion without this. It's not clear why this
     # worked fine when not cross-compiling
-    fetch = if name == "libiconv"
+    fetch = if true # name == "libiconv"
       then stdenv.fetchurlBoot
       else fetchurl;
   in fetch {
@@ -147,7 +148,7 @@ let
     inherit sha256;
   };
 
-  appleDerivation_ = name: version: sha256: attrs: stdenv.mkDerivation ({
+  appleDerivation_ = name: version: sha256: lib.makeOverridable ({ stdenv }: attrs: stdenv.mkDerivation ({
     inherit version;
     name = "${name}-${version}";
     enableParallelBuilding = true;
@@ -156,13 +157,13 @@ let
     };
   } // (if attrs ? srcs then {} else {
     src  = fetchApple version sha256 name;
-  }) // attrs);
+  }) // attrs)) { inherit stdenv; };
 
   applePackage = namePath: version: sha256:
     let
       name = builtins.elemAt (stdenv.lib.splitString "/" namePath) 0;
       appleDerivation = appleDerivation_ name version sha256;
-      callPackage = pkgs.newScope (packages // pkgs.darwin // { inherit appleDerivation name version; });
+      callPackage = pkgs.newScope (packages // pkgs.darwin // { inherit appleDerivation name version sha256 fetchApple; });
     in callPackage (./. + "/${namePath}");
 
   IOKitSpecs = {
@@ -204,6 +205,8 @@ let
     };
     copyfile        = applePackage "copyfile"          "osx-10.12.6"     "0a70bvzndkava1a946cdq42lnjhg7i7b5alpii3lap6r5fkvas0n" {};
     Csu             = applePackage "Csu"               "osx-10.11.6"     "0yh5mslyx28xzpv8qww14infkylvc1ssi57imhi471fs91sisagj" {};
+    Csu-bin         = {
+    }."${stdenv.hostPlatform.system}" or throw "Missing Csu-bin for cross compilation to ${stdenv.hostPlatform.system}";
     dtrace          = applePackage "dtrace"            "osx-10.12.6"     "0hpd6348av463yqf70n3xkygwmf1i5zza8kps4zys52sviqz3a0l" {};
     dyld            = applePackage "dyld"              "osx-10.12.6"     "0q4jmk78b5ajn33blh4agyq6v2a63lpb3fln78az0dy12bnp1qqk" {};
     eap8021x        = applePackage "eap8021x"          "osx-10.11.6"     "0iw0qdib59hihyx2275rwq507bq2a06gaj8db4a8z1rkaj1frskh" {};
@@ -227,9 +230,16 @@ let
     libplatform     = applePackage "libplatform"       "osx-10.12.6"     "0rh1f5ybvwz8s0nwfar8s0fh7jbgwqcy903cv2x8m15iq1x599yn" {};
     libpthread      = applePackage "libpthread"        "osx-10.12.6"     "1j6541rcgjpas1fc77ip5krjgw4bvz6jq7bq7h9q7axb0jv2ns6c" {};
     libresolv       = applePackage "libresolv"         "osx-10.12.6"     "077j6ljfh7amqpk2146rr7dsz5vasvr3als830mgv5jzl7l6vz88" {};
-    Libsystem       = applePackage "Libsystem"         "osx-10.12.6"     "1082ircc1ggaq3wha218vmfa75jqdaqidsy1bmrc4ckfkbr3bwx2" {
+    Libsystem       = assert stdenv.hostPlatform == stdenv.buildPlatform; applePackage "Libsystem"         "osx-10.12.6"     "1082ircc1ggaq3wha218vmfa75jqdaqidsy1bmrc4ckfkbr3bwx2" {
       libutil = pkgs.darwin.libutil.override { headersOnly = true; };
       hfs = pkgs.darwin.hfs.override { headersOnly = true; };
+    };
+    LibsystemCross = applePackage "Libsystem/cross.nix"         "osx-10.12.6"     "1082ircc1ggaq3wha218vmfa75jqdaqidsy1bmrc4ckfkbr3bwx2" {
+      Csu = null;
+      # Csu = pkgs.darwin.Csu-bin;
+      #Csu = pkgs.darwin.Csu.override {
+      #  stdenv = overrideCC stdenv buildPackages.llvmPackages_7.clangNoCompilerRt;
+      #};
     };
     libutil         = applePackage "libutil"           "osx-10.12.6"     "0lqdxaj82h8yjbjm856jjz9k2d96k0viimi881akfng08xk1246y" {};
     libunwind       = applePackage "libunwind"         "osx-10.12.6"     "0miffaa41cv0lzf8az5k1j1ng8jvqvxcr4qrlkf3xyj479arbk1b" {};

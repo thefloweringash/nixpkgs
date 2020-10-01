@@ -29,7 +29,10 @@ in lib.init bootStages ++ [
       assert vanillaPackages.stdenv.buildPlatform == localSystem;
       assert vanillaPackages.stdenv.hostPlatform == localSystem;
       assert vanillaPackages.stdenv.targetPlatform == localSystem;
-      vanillaPackages.stdenv.override { targetPlatform = crossSystem; };
+      vanillaPackages.stdenv.override {
+        # name = "stdenv-cross-tools";
+        targetPlatform = crossSystem;
+      };
     # It's OK to change the built-time dependencies
     allowCustomOverrides = true;
   })
@@ -41,13 +44,17 @@ in lib.init bootStages ++ [
       ++ (if (with crossSystem; isWasm || isRedox) then [(import ../../top-level/static.nix)] else []);
     selfBuild = false;
     stdenv = buildPackages.stdenv.override (old: rec {
+      # name = "stdenv-cross-run";
+
       buildPlatform = localSystem;
       hostPlatform = crossSystem;
       targetPlatform = crossSystem;
 
       # Prior overrides are surely not valid as packages built with this run on
       # a different platform, and so are disabled.
-      overrides = _: _: {};
+      overrides = _: _: {
+        horribleDebugHacks = buildPackages;
+      };
       extraBuildInputs = [ ]; # Old ones run on wrong platform
       allowedRequisites = null;
 
@@ -64,7 +71,6 @@ in lib.init bootStages ++ [
              # when there is a C compiler and everything should be fine.
              then throw "no C compiler provided for this platform"
            else if crossSystem.isDarwin
-             then buildPackages.llvmPackages.clang
            else if crossSystem.useLLVM or false
              then buildPackages.llvmPackages_8.lldClang
            else buildPackages.gcc;

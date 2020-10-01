@@ -1,6 +1,10 @@
-{ appleDerivation, Libinfo, configd, mDNSResponder }:
+{ stdenv, appleDerivation, Libinfo, configd, mDNSResponder }:
 
-appleDerivation {
+let
+  appleDerivation_ = appleDerivation.override { inherit stdenv; };
+in
+
+appleDerivation_ {
   buildInputs = [ Libinfo configd mDNSResponder ];
 
   buildPhase = ''

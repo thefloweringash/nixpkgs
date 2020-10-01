@@ -430,9 +430,18 @@ in rec {
     persistent = self: super: with prevStage; {
       inherit
         gnumake gzip gnused bzip2 gawk ed xz patch bash
-        ncurses libffi zlib llvm gmp pcre gnugrep
+        ncurses libffi zlib gmp pcre gnugrep
         coreutils findutils diffutils patchutils;
 
+      darwin = super.darwin // {
+        inherit (darwin) dyld ICU Libsystem Csu libiconv;
+      } // lib.optionalAttrs (super.stdenv.targetPlatform == localSystem) {
+        inherit (darwin) binutils binutils-unwrapped cctools;
+      };
+    } // lib.optionalAttrs (super.stdenv.targetPlatform == localSystem) {
+      inherit llvm;
+
+      # Need to get rid of these when cross-compiling.
       llvmPackages_7 = super.llvmPackages_7 // (let
         tools = super.llvmPackages_7.tools.extend (_: super: {
           inherit (llvmPackages_7) llvm clang-unwrapped;
@@ -442,13 +451,6 @@ in rec {
         });
       in { inherit tools libraries; } // tools // libraries);
 
-      darwin = super.darwin // {
-        inherit (darwin) dyld ICU Libsystem libiconv;
-      } // lib.optionalAttrs (super.stdenv.targetPlatform == localSystem) {
-        inherit (darwin) binutils binutils-unwrapped cctools;
-      };
-    } // lib.optionalAttrs (super.stdenv.targetPlatform == localSystem) {
-      # Need to get rid of these when cross-compiling.
       inherit binutils binutils-unwrapped;
     };
   in import ../generic rec {
@@ -499,14 +501,14 @@ in rec {
     ]);
 
     overrides = lib.composeExtensions persistent (self: super: {
-      clang = cc;
-      llvmPackages = super.llvmPackages // { clang = cc; };
-      inherit cc;
-
       darwin = super.darwin // {
         inherit (prevStage.darwin) CF darwin-stubs;
         xnu = super.darwin.xnu.override { inherit (prevStage) python3; };
       };
+    } // lib.optionalAttrs (super.stdenv.targetPlatform == localSystem) {
+      clang = cc;
+      llvmPackages = super.llvmPackages // { clang = cc; };
+      inherit cc;
     });
   };
 

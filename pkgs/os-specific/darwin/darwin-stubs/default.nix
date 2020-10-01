@@ -1,14 +1,14 @@
-{ stdenv, fetchFromGitHub }:
+{ stdenvNoCC, fetchFromGitHub }:
 
-stdenv.mkDerivation {
+stdenvNoCC.mkDerivation {
   pname = "darwin-stubs";
   version = "10.12";
 
   src = fetchFromGitHub {
     owner = "NixOS";
     repo = "darwin-stubs";
-    rev = "80b3d4a57d3454c975eefd984c804dbd76f04ef2";
-    sha256 = "0sslg4rmskms8ixixv1gvnrvvvmn723vbfjj6mcn24fj2ncg38y7";
+    rev = "7f4a8a085e4bc17a15ff62d2e0683b92d0c61396";
+    sha256 = "11gakp70k10d5zbskbkjnxq5v9gdanvp8ivvpzgvmgl6mgfrpxhd";
   };
 
   dontBuild = true;
