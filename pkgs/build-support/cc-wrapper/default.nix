@@ -463,7 +463,7 @@ stdenv.mkDerivation {
       substituteAll ${../wrapper-common/utils.bash} $out/nix-support/utils.bash
     ''
 
-    + optionalString (stdenv.lib.traceValFn (x: "(${stdenv.buildPlatform.config}, ${stdenv.hostPlatform.config}, ${stdenv.targetPlatform.config})"+"adding arch? ${toString x}") (stdenv.targetPlatform.isDarwin && stdenv.targetPlatform.isAarch64)) (
+    + optionalString (stdenv.targetPlatform.isDarwin && stdenv.targetPlatform.isAarch64) (
       let
         iosPlatformArch = { parsed, ... }: {
           armv7a  = "armv7";

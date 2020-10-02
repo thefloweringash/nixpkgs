@@ -17,6 +17,7 @@ stdenv.mkDerivation {
 
   cmakeFlags = stdenv.lib.optionals ((stdenv.hostPlatform.useLLVM or false) || darwinCross) [
     "-DLLVM_ENABLE_LIBCXX=ON"
+  ] ++ stdenv.lib.optionals (stdenv.hostPlatform.useLLVM or false) [
     "-DLIBCXXABI_USE_LLVM_UNWINDER=ON"
   ] ++ stdenv.lib.optionals stdenv.hostPlatform.isWasm [
     "-DLIBCXXABI_ENABLE_THREADS=OFF"

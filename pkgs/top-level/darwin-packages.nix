@@ -3,7 +3,7 @@
 }:
 
 let
-  useAppleSDK = stdenv.hostPlatform.isAarch64 && stdenv.targetPlatform.isAarch64;
+  useAppleSDK = stdenv.hostPlatform.isAarch64;
 
   appleSourcePackages =
     callPackage ../os-specific/darwin/apple-source-releases {};
@@ -11,7 +11,9 @@ let
   appleSDK =
     callPackage ../os-specific/darwin/macosx-sdk {};
 
-  sdkPackages = if useAppleSDK then appleSDK else appleSourcePackages;
+  sdkPackages = (builtins.trace "(${stdenv.buildPlatform.config}, ${stdenv.hostPlatform.config}, ${stdenv.targetPlatform.config}) -> useAppleSDK = ${builtins.toJSON useAppleSDK}") (
+    if useAppleSDK then appleSDK else appleSourcePackages
+  );
 in
 
 assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
@@ -40,11 +42,12 @@ assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
   };
 
   binutils = pkgs.wrapBintoolsWith {
-    libc =
-      if stdenv.targetPlatform.isAarch64 then pkgs.stdenv.cc.libc
-      else if (stdenv.targetPlatform != stdenv.hostPlatform) && !useAppleSDK
-      then assert (builtins.trace "(${stdenv.buildPlatform.config}, ${stdenv.hostPlatform.config}, ${stdenv.targetPlatform.config}) -> useAppleSDK=${toString useAppleSDK}" false); pkgs.libcCross
-      else pkgs.stdenv.cc.libc;
+    libc = (x: builtins.trace ("darwin setting binutils.libc=${x}") x)(
+      if stdenv.targetPlatform.isAarch64 then appleSDK.Libsystem else  pkgs.stdenv.cc.libc);
+      # if stdenv.hostPlatform.isAarch64 then pkgs.stdenv.cc.libc
+      # else if (stdenv.targetPlatform != stdenv.hostPlatform) && !useAppleSDK
+      # then assert false; pkgs.libcCross
+      # else pkgs.stdenv.cc.libc;
     bintools = darwin.binutils-unwrapped;
   };
 
