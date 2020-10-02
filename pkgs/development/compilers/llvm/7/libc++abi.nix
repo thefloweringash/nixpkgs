@@ -5,7 +5,15 @@
 
 assert (stdenv.hostPlatform != stdenv.buildPlatform) -> standalone;
 
-stdenv.mkDerivation {
+let
+  prStdenv = desc: stdenv:
+    if stdenv == null
+      then "${desc} is null"
+      else "${desc} (${stdenv.buildPlatform.system}, ${stdenv.hostPlatform.system}, ${stdenv.targetPlatform.system})";
+  showStdenv = desc: stdenv: builtins.trace (prStdenv desc stdenv);
+
+
+drv = stdenv.mkDerivation {
   pname = "libc++abi";
   inherit version;
 
@@ -18,7 +26,7 @@ stdenv.mkDerivation {
     unpackFile ${llvm.src}
     cmakeFlagsArray=($cmakeFlagsArray -DLLVM_PATH=$PWD/$(ls -d llvm-*) -DLIBCXXABI_LIBCXX_PATH=$PWD/$(ls -d libcxx-*) )
   '' + stdenv.lib.optionalString stdenv.isDarwin ''
-    export TRIPLE=${stdenv.hostPlatform.parsed.cpu.name}-apple-darwin
+    export TRIPLE=${stdenv.hostPlatform.config}
   '' + stdenv.lib.optionalString stdenv.hostPlatform.isMusl ''
     patch -p1 -d $(ls -d libcxx-*) -i ${../libcxx-0001-musl-hacks.patch}
   '';
@@ -56,4 +64,6 @@ stdenv.mkDerivation {
     maintainers = with stdenv.lib.maintainers; [ vlstill ];
     platforms = stdenv.lib.platforms.unix;
   };
-}
+};
+
+in showStdenv "${drv.drvPath} stdenv" stdenv drv

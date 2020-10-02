@@ -7,7 +7,7 @@ appleDerivation {
       --replace /usr/local/lib /lib \
       --replace /usr/bin "" \
       --replace /bin/ "" \
-      --replace "CC = " "CC = cc #" \
+      --replace "CC = " "CC = ${stdenv.cc.targetPrefix}cc #" \
       --replace "SDK_DIR = " "SDK_DIR = . #" \
 
     # Mac OS didn't support rpaths back before 10.5, but we don't care about it.
@@ -15,6 +15,10 @@ appleDerivation {
       --replace -mmacosx-version-min=10.4 -mmacosx-version-min=10.6 \
       --replace -mmacosx-version-min=10.5 -mmacosx-version-min=10.6
   '';
+
+  NIX_CFLAGS_ASSEMBLE = if stdenv.hostPlatform != stdenv.buildPlatform
+    then "-triple ${stdenv.hostPlatform.config}"
+    else null;
 
   installFlags = [ "DSTROOT=$(out)" ];
 

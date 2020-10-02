@@ -205,8 +205,7 @@ let
     };
     copyfile        = applePackage "copyfile"          "osx-10.12.6"     "0a70bvzndkava1a946cdq42lnjhg7i7b5alpii3lap6r5fkvas0n" {};
     Csu             = applePackage "Csu"               "osx-10.11.6"     "0yh5mslyx28xzpv8qww14infkylvc1ssi57imhi471fs91sisagj" {};
-    Csu-bin         = {
-    }."${stdenv.hostPlatform.system}" or throw "Missing Csu-bin for cross compilation to ${stdenv.hostPlatform.system}";
+    Csu-bin         = stdenv.callPackage ./Csu/bin.nix {};
     dtrace          = applePackage "dtrace"            "osx-10.12.6"     "0hpd6348av463yqf70n3xkygwmf1i5zza8kps4zys52sviqz3a0l" {};
     dyld            = applePackage "dyld"              "osx-10.12.6"     "0q4jmk78b5ajn33blh4agyq6v2a63lpb3fln78az0dy12bnp1qqk" {};
     eap8021x        = applePackage "eap8021x"          "osx-10.11.6"     "0iw0qdib59hihyx2275rwq507bq2a06gaj8db4a8z1rkaj1frskh" {};
@@ -234,7 +233,7 @@ let
       libutil = pkgs.darwin.libutil.override { headersOnly = true; };
       hfs = pkgs.darwin.hfs.override { headersOnly = true; };
     };
-    LibsystemCross = applePackage "Libsystem/cross.nix"         "osx-10.12.6"     "1082ircc1ggaq3wha218vmfa75jqdaqidsy1bmrc4ckfkbr3bwx2" {
+    LibsystemCross = assert false; applePackage "Libsystem/cross.nix"         "osx-10.12.6"     "1082ircc1ggaq3wha218vmfa75jqdaqidsy1bmrc4ckfkbr3bwx2" {
       Csu = null;
       # Csu = pkgs.darwin.Csu-bin;
       #Csu = pkgs.darwin.Csu.override {

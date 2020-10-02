@@ -1,14 +1,13 @@
 { lib, stdenv, fetchFromGitHub, cmake, python3, ncurses }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "libtapi";
-  version = "1000.10.8"; # determined by looking at VERSION.txt
-
+  version = "1100.0.11";
   src = fetchFromGitHub {
     owner = "tpoechtrager";
     repo = "apple-libtapi";
-    rev = "3cb307764cc5f1856c8a23bbdf3eb49dfc6bea48";
-    sha256 = "1zb10p6xkls8x7wsdwgy9c0v16z97rfkgidii9ffq5rfczgvrhjh";
+    rev = "a66284251b46d591ee4a0cb4cf561b92a0c138d8";
+    sha256 = "1rwxpbfvzh5mcaq8h9ga2b0wkc6r325s50spzrpismzl8b8ahj2s";
   };
 
   sourceRoot = "source/src/llvm";

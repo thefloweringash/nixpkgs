@@ -3,10 +3,20 @@
 }:
 
 let
-  apple-source-releases = callPackage ../os-specific/darwin/apple-source-releases { };
+  useAppleSDK = stdenv.hostPlatform.isAarch64 && stdenv.targetPlatform.isAarch64;
+
+  appleSourcePackages =
+    callPackage ../os-specific/darwin/apple-source-releases {};
+
+  appleSDK =
+    callPackage ../os-specific/darwin/macosx-sdk {};
+
+  sdkPackages = if useAppleSDK then appleSDK else appleSourcePackages;
 in
 
-(apple-source-releases // {
+assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
+
+(sdkPackages // {
 
   callPackage = newScope (darwin.apple_sdk.frameworks // darwin);
 
@@ -14,9 +24,14 @@ in
     extraBuildInputs = [];
   };
 
-  apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
-    inherit (darwin) darwin-stubs print-reexports;
-  };
+  apple_sdk = if useAppleSDK then
+    callPackage ../os-specific/darwin/macosx-sdk/apple_sdk.nix {
+      inherit (darwin) MacOSX-SDK print-reexports;
+    }
+  else
+    callPackage ../os-specific/darwin/apple-sdk {
+      inherit (darwin) darwin-stubs print-reexports;
+    };
 
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (darwin) cctools;
@@ -26,8 +41,9 @@ in
 
   binutils = pkgs.wrapBintoolsWith {
     libc =
-      if stdenv.targetPlatform != stdenv.hostPlatform
-      then pkgs.libcCross
+      if stdenv.targetPlatform.isAarch64 then pkgs.stdenv.cc.libc
+      else if (stdenv.targetPlatform != stdenv.hostPlatform) && !useAppleSDK
+      then assert (builtins.trace "(${stdenv.buildPlatform.config}, ${stdenv.hostPlatform.config}, ${stdenv.targetPlatform.config}) -> useAppleSDK=${toString useAppleSDK}" false); pkgs.libcCross
       else pkgs.stdenv.cc.libc;
     bintools = darwin.binutils-unwrapped;
   };
@@ -62,7 +78,7 @@ in
 
   iproute2mac = callPackage ../os-specific/darwin/iproute2mac { };
 
-  libobjc = apple-source-releases.objc4;
+  libobjc = sdkPackages.objc4;
 
   lsusb = callPackage ../os-specific/darwin/lsusb { };
 
