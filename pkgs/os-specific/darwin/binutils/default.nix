@@ -11,6 +11,8 @@ let
   cmds = [
     "ar" "ranlib" "as" "install_name_tool"
     "ld" "strip" "otool" "lipo" "nm" "strings" "size"
+  ] ++ stdenv.lib.optionals stdenv.targetPlatform.isAarch64 [
+    "codesign_allocate"
   ];
 in
 

@@ -11,6 +11,7 @@ let
     };
 
     dontBuild = true;
+    darwinDontCodeSign = true;
 
     installPhase = ''
       mkdir $out

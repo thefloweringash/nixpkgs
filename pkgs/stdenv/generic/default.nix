@@ -19,6 +19,7 @@ let lib = import ../../../lib; in lib.makeOverridable (
 , setupScript ? ./setup.sh
 
 , extraNativeBuildInputs ? []
+, extraNativeBuildInputsPostStrip ? [] # TODO: this is terrible
 , extraBuildInputs ? []
 , __stdenvImpureHostDeps ? []
 , __extraImpureHostDeps ? []
@@ -56,6 +57,7 @@ let
       ../../build-support/setup-hooks/make-symlinks-relative.sh
       ../../build-support/setup-hooks/compress-man-pages.sh
       ../../build-support/setup-hooks/strip.sh
+    ] ++ extraNativeBuildInputsPostStrip ++ [
       ../../build-support/setup-hooks/patch-shebangs.sh
       ../../build-support/setup-hooks/prune-libtool-files.sh
     ]
