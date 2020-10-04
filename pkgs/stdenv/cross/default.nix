@@ -88,6 +88,9 @@ in lib.init bootStages ++ [
            # to recognize 64-bit DLLs
         ++ lib.optional (hostPlatform.config == "x86_64-w64-mingw32") buildPackages.file
         ;
+
+      extraNativeBuildInputsPostStrip =
+        lib.optional (hostPlatform.isAarch64 && hostPlatform.isDarwin) buildPackages.darwin.autoSignDarwinBinariesHook;
     });
   })
 

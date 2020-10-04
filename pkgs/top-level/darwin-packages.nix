@@ -1,5 +1,6 @@
 { buildPackages, pkgs, targetPackages
 , darwin, stdenv, callPackage, callPackages, newScope
+, makeSetupHook
 }:
 
 let
@@ -65,6 +66,22 @@ assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
   darwin-stubs = callPackage ../os-specific/darwin/darwin-stubs { };
 
   print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports { };
+
+  sigtool = callPackage ../os-specific/darwin/sigtool { };
+
+  autoSignDarwinBinariesHook = makeSetupHook {
+    substitutions = let
+      iosPlatformArch = { parsed, ... }: {
+        armv7a  = "armv7";
+        aarch64 = "arm64";
+        x86_64  = "x86_64";
+      }.${parsed.cpu.name};
+    in {
+      inherit (targetPackages.stdenv.cc or stdenv.cc) targetPrefix;
+      arch = iosPlatformArch stdenv.targetPlatform;
+    };
+    deps = [ darwin.sigtool ];
+  } ../os-specific/darwin/sigtool/setup-hook.nix;
 
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
