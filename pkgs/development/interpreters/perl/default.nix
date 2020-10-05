@@ -90,7 +90,7 @@ let
         "-Dman3dir=${placeholder "out"}/share/man/man3"
       ];
 
-    configureScript = optionalString (!crossCompiling) "${stdenv.shell} ./Configure";
+    configureScript = if (!crossCompiling) then "${stdenv.shell} ./Configure" else "${stdenv.shell} ./configure.cross";
 
     dontAddPrefix = !crossCompiling;
 
@@ -185,6 +185,7 @@ let
 
     postUnpack = ''
       unpackFile ${perl-cross-src}
+      mv perl-cross-${crossVersion}/configure perl-${version}/configure.cross
       cp -R perl-cross-${crossVersion}/* perl-${version}/
     '';
 

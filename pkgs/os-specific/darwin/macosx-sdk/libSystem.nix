@@ -44,6 +44,11 @@ stdenvNoCC.mkDerivation {
       ${MacOSX-SDK}/usr/lib/system \
       $out/lib
 
+    # Extra libraries
+    cp -vr \
+      ${MacOSX-SDK}/usr/lib/libm.tbd \
+      $out/lib
+
     for f in $csu; do
       from=${MacOSX-SDK}/usr/lib/$f
       if [ -e "$from" ]; then

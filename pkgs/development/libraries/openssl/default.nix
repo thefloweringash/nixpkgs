@@ -55,6 +55,7 @@ let
         armv6l-linux = "./Configure linux-armv4 -march=armv6";
         armv7l-linux = "./Configure linux-armv4 -march=armv7-a";
         x86_64-darwin  = "./Configure darwin64-x86_64-cc";
+        aarch64-darwin = "./Configure darwin64-arm64-cc";
         x86_64-linux = "./Configure linux-x86_64";
         x86_64-solaris = "./Configure solaris64-x86_64-gcc";
       }.${stdenv.hostPlatform.system} or (
@@ -168,7 +169,10 @@ in {
       (if stdenv.hostPlatform.isDarwin
        then ./1.1/use-etc-ssl-certs-darwin.patch
        else ./1.1/use-etc-ssl-certs.patch)
-    ];
+     ] ++ stdenv.lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
+       # https://github.com/openssl/openssl/issues/12254
+       ./1.1/darwin-apple-silicon.patch
+     ];
     withDocs = true;
   };
 }

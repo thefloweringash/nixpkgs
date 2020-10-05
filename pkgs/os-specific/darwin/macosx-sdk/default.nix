@@ -38,9 +38,10 @@ let
 
     # alias
     configd = pkgs.darwin.apple_sdk.frameworks.SystemConfiguration;
+    IOKit = pkgs.darwin.apple_sdk.frameworks.IOKit;
 
     # built from source, non-libraries
-    inherit (adv_cmds-boot) ps;
+    inherit (adv_cmds-boot) ps locale;
     bsdmake = callPackage ./bsdmake {};
   };
 in packages
