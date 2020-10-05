@@ -8341,7 +8341,13 @@ in
 
   any-nix-shell = callPackage ../shells/any-nix-shell { };
 
-  bash = lowPrio (callPackage ../shells/bash/4.4.nix { });
+  bash = lowPrio (callPackage ../shells/bash/4.4.nix {
+    # TODO mass rebuild and unify, see also bashInteractive
+    # TODO this broke on cross compiling to aarch64-darwin. it presented an
+    # aarch64-apple-darwin-ld that was non-functional. Questions: why does bash
+    # need binutils? Why does binutils have a broken ld wrapper?
+    binutils = if stdenv.targetPlatform.isDarwin && stdenv.targetPlatform.isAarch64 then stdenv.cc.bintools else binutils;
+  });
   bash_5 = lowPrio (callPackage ../shells/bash/5.0.nix { });
   bashInteractive_5 = lowPrio (callPackage ../shells/bash/5.0.nix {
     interactive = true;
@@ -8350,6 +8356,8 @@ in
 
   # WARNING: this attribute is used by nix-shell so it shouldn't be removed/renamed
   bashInteractive = callPackage ../shells/bash/4.4.nix {
+    # TODO mass rebuild and unify
+    binutils = if stdenv.targetPlatform.isDarwin && stdenv.targetPlatform.isAarch64 then stdenv.cc.bintools else binutils;
     interactive = true;
     withDocs = true;
   };
