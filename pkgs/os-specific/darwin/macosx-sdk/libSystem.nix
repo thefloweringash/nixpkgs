@@ -45,9 +45,9 @@ stdenvNoCC.mkDerivation {
       $out/lib
 
     # Extra libraries
-    cp -vr \
-      ${MacOSX-SDK}/usr/lib/libm.tbd \
-      $out/lib
+    for name in c dbm dl info m mx poll proc pthread rpcsvc util gcc_s.1; do
+      cp ${MacOSX-SDK}/usr/lib/lib$name.tbd $out/lib
+    done
 
     for f in $csu; do
       from=${MacOSX-SDK}/usr/lib/$f
