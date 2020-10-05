@@ -126,7 +126,9 @@ assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
 
   darling = callPackage ../os-specific/darwin/darling/default.nix { };
 
-  libtapi = callPackage ../os-specific/darwin/libtapi {};
+  libtapi = callPackage ../os-specific/darwin/libtapi {
+    inherit (pkgs.darwin.cctools) stdenv;
+  };
 
   ios-deploy = callPackage ../os-specific/darwin/ios-deploy {};
 

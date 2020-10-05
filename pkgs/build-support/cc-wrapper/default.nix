@@ -61,12 +61,12 @@ let
     then import ../expand-response-params { inherit (buildPackages) stdenv; }
     else "";
 
-  useGccForLibs = isClang
+  useGccForLibs = traceValFn (x: "useGccForLibs=${builtins.toJSON x}") (isClang
     && libcxx == null
     && !(stdenv.targetPlatform.useLLVM or false)
     && !(stdenv.targetPlatform.isDarwin)
     && !(stdenv.targetPlatform.useAndroidPrebuilt or false)
-    && gccForLibs != null;
+    && gccForLibs != null);
 
   # older compilers (for example bootstrap's GCC 5) fail with -march=too-modern-cpu
   isGccArchSupported = arch:
