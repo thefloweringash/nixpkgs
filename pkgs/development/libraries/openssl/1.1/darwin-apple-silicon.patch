@@ -1,6 +1,6 @@
-diff -ur a/openssl-1.1.1g/Configurations/10-main.conf b/openssl-1.1.1g/Configurations/10-main.conf
---- a/openssl-1.1.1g/Configurations/10-main.conf	2020-04-21 21:22:39.000000000 +0900
-+++ b/openssl-1.1.1g/Configurations/10-main.conf	2020-10-04 21:44:36.875724476 +0900
+diff -ur a/Configurations/10-main.conf b/Configurations/10-main.conf
+--- a/Configurations/10-main.conf	2020-04-21 21:22:39.000000000 +0900
++++ b/Configurations/10-main.conf	2020-10-04 21:44:36.875724476 +0900
 @@ -1557,6 +1557,14 @@
          bn_ops           => "SIXTY_FOUR_BIT_LONG",
          perlasm_scheme   => "macosx",
