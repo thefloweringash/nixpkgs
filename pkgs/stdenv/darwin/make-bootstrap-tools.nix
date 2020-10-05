@@ -1,8 +1,17 @@
 { pkgspath ? ../../.., test-pkgspath ? pkgspath, system ? builtins.currentSystem, crossSystem ? builtins.currentSystem }:
 
-with import pkgspath ({ inherit system; } // (if (crossSystem != system) then { inherit crossSystem; } else {}));
+let
+  pkgs = import pkgspath ({ inherit system; } // (if (crossSystem != system) then { inherit crossSystem; } else {}));
+in
+
+with pkgs;
+
+let
+  llvmPackageSet = if stdenv.hostPlatform.isAarch64 then "llvmPackages_10" else "llvmPackages_7";
+in
 
 builtins.trace (
+
 ''
   bootstrap tools for darwin
     system=${system}, crossSystem=${crossSystem}
@@ -11,11 +20,13 @@ builtins.trace (
     stdenv.hostPlatform=${stdenv.hostPlatform.config}
     stdenv.buildPlatform=${stdenv.buildPlatform.config}
     stdenv.targetPlatform=${stdenv.targetPlatform.config}
+
+  llvm: ${llvmPackageSet}
 ''
 ) (
 
 let
-  llvmPackages = if stdenv.hostPlatform.isAarch64 then llvmPackages_10 else llvmPackages_7;
+  llvmPackages = pkgs."${llvmPackageSet}";
 in rec {
   coreutils_ = coreutils.override (args: {
     # We want coreutils without ACL support.

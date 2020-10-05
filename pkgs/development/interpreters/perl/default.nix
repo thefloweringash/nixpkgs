@@ -183,9 +183,13 @@ let
 
     depsBuildBuild = [ buildPackages.stdenv.cc makeWrapper ];
 
+    patches = stdenv.lib.optional stdenv.hostPlatform.isDarwin [
+      ./cross-darwin.patch
+    ];
+
     postUnpack = ''
       unpackFile ${perl-cross-src}
-      mv perl-cross-${crossVersion}/configure perl-${version}/configure.cross
+      mv perl-cross-${crossVersion}/{configure,configure.cross}
       cp -R perl-cross-${crossVersion}/* perl-${version}/
     '';
 
