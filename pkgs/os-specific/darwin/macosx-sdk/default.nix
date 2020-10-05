@@ -35,6 +35,7 @@ let
     libiconv = callPackage ./libiconv.nix {};
     libcharset = callPackage ./libcharset.nix {};
     objc4 = callPackage ./libobjc.nix {};
+    ICU = callPackage ./ICU {};
 
     # alias
     configd = pkgs.darwin.apple_sdk.frameworks.SystemConfiguration;

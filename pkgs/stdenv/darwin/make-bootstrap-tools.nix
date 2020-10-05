@@ -1,9 +1,21 @@
-{ pkgspath ? ../../.., test-pkgspath ? pkgspath, system ? builtins.currentSystem }:
+{ pkgspath ? ../../.., test-pkgspath ? pkgspath, system ? builtins.currentSystem, crossSystem ? builtins.currentSystem }:
 
-with import pkgspath { inherit system; };
+with import pkgspath ({ inherit system; } // (if (crossSystem != system) then { inherit crossSystem; } else {}));
+
+builtins.trace (
+''
+  bootstrap tools for darwin
+    system=${system}, crossSystem=${crossSystem}
+
+  platforms:
+    stdenv.hostPlatform=${stdenv.hostPlatform.config}
+    stdenv.buildPlatform=${stdenv.buildPlatform.config}
+    stdenv.targetPlatform=${stdenv.targetPlatform.config}
+''
+) (
 
 let
-  llvmPackages = llvmPackages_7;
+  llvmPackages = if stdenv.hostPlatform.isAarch64 then llvmPackages_10 else llvmPackages_7;
 in rec {
   coreutils_ = coreutils.override (args: {
     # We want coreutils without ACL support.
@@ -350,3 +362,5 @@ in rec {
       in (import (test-pkgspath + "/pkgs/stdenv/darwin") args').stagesDarwin;
   };
 }
+
+)
