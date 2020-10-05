@@ -5,9 +5,4 @@ let
   };
 
   pkgs = import ./. { crossSystem = appleSiliconSystem; };
-in
-
-{
-  inherit pkgs;
-  inherit (pkgs) buildPackages hello;
-}
+in pkgs
