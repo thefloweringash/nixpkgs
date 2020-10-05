@@ -1,7 +1,7 @@
-diff --git a/icuSources/i18n/ucoleitr.cpp b/icuSources/i18n/ucoleitr.cpp
+diff --git a/i18n/ucoleitr.cpp b/i18n/ucoleitr.cpp
 index ecc94c9..936452f 100644
---- a/icuSources/i18n/ucoleitr.cpp
-+++ b/icuSources/i18n/ucoleitr.cpp
+--- a/i18n/ucoleitr.cpp
++++ b/i18n/ucoleitr.cpp
 @@ -320,7 +320,7 @@ ucol_nextProcessed(UCollationElements *elems,
                     int32_t            *ixHigh,
                     UErrorCode         *status)

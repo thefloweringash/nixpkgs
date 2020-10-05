@@ -1,6 +1,7 @@
-{ appleDerivation }:
+{ appleDerivation, name, version, stdenv, buildRoot ? false }:
 
 appleDerivation {
+  name = "${name}${stdenv.lib.optionalString buildRoot "-build-root"}-${version}";
   patches = [ ./clang-5.patch ];
 
   postPatch = ''
@@ -16,7 +17,12 @@ appleDerivation {
 
   makeFlags = [ "DSTROOT=$(out)" ];
 
-  postInstall = ''
+  installPhase = if buildRoot then ''
+    mkdir $out
+    mv * $out
+  '' else null;
+
+  postInstall = stdenv.lib.optionalString (!buildRoot) ''
     mv $out/usr/local/include $out/include
     rm -rf $out/usr
   '';

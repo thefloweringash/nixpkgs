@@ -1,31 +1,26 @@
-{ stdenv, fetchurl }:
+{ stdenv, fetchurl, buildPackages, buildRoot ? false }:
 
 stdenv.mkDerivation rec {
-  pname = "ICU";
+  pname = "ICU${stdenv.lib.optionalString buildRoot "-build-root"}";
   version = "531.48";
 
   src = fetchurl {
     url = "http://www.opensource.apple.com/tarballs/${pname}/${pname}-${version}.tar.gz";
-    sha256 = "0000000000000000000000000000000000000000000000000000";
+    sha256 = "1qihlp42n5g4dl0sn0f9pc0bkxy1452dxzf0vr6y5gqpshlzy03p";
   };
+
+  # Using the regular configure script means less effort, but the resulting
+  # build is a lot larger, possibly more complete?
+  sourceRoot = "${pname}-${version}/icuSources";
 
   patches = [ ./clang-5.patch ];
 
-  postPatch = ''
-    substituteInPlace makefile \
-      --replace /usr/bin/ "" \
-      --replace '$(ISYSROOT)' "" \
-      --replace 'shell xcodebuild -version -sdk' 'shell true' \
-      --replace 'shell xcrun -sdk $(SDKPATH) -find' 'shell echo' \
-      --replace '-install_name $(libdir)' "-install_name $out/lib/" \
-      --replace /usr/local/bin/ /bin/ \
-      --replace /usr/lib/ /lib/ \
-  '';
+  configureFlags = stdenv.lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+    "--with-cross-build=${buildPackages.darwin.ICU.override { buildRoot = true; }}/build"
+  ];
 
-  makeFlags = [ "DSTROOT=$(out)" ];
-
-  postInstall = ''
-    mv $out/usr/local/include $out/include
-    rm -rf $out/usr
-  '';
+  installPhase = if buildRoot then ''
+    mkdir $out
+    mv * $out
+  '' else null;
 }
