@@ -34,8 +34,8 @@ stdenv.mkDerivation {
 
   installTargets = [ "install-libtapi" "install-tapi-headers" ];
 
-  postInstall = ''
-    install_name_tool -id $out/lib/libtapi.dylib $out/lib/libtapi.dylib
+  postInstall = stdenv.lib.optionalString stdenv.hostPlatform.isDarwin ''
+    ${stdenv.cc.targetPrefix}install_name_tool -id $out/lib/libtapi.dylib $out/lib/libtapi.dylib
   '';
 
   meta = with lib; {
