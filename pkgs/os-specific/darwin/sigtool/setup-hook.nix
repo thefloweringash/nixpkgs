@@ -2,11 +2,14 @@ fixupOutputHooks+=('signDarwinBinaries')
 
 signDarwinBinary() {
   local path="$1"
-  local sigsize
+  local sigsize arch
+
+  arch=$(gensig --file "$path" show-arch)
 
   sigsize=$(gensig --file "$path" size)
   sigsize=$(( ((sigsize + 15) / 16) * 16 + 1024 ))
-  @targetPrefix@codesign_allocate -i "$path" -a @arch@ "$sigsize" -o "$path.unsigned"
+
+  @targetPrefix@codesign_allocate -i "$path" -a "$arch" "$sigsize" -o "$path.unsigned"
   gensig --identifier "$(basename "$path")" --file "$path.unsigned" inject
   mv -vf "$path.unsigned" "$path"
 }
