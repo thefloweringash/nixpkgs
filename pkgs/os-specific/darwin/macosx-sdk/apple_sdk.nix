@@ -28,7 +28,7 @@ let
       cp -vr ${MacOSX-SDK}/System/Library/Frameworks/${name}.framework $out/Library/Frameworks
 
       # Fix and check tbd re-export references
-      find $out -name '*.tbd' | while read tbd; do
+      find $out -name '*.tbd' -type f | while read tbd; do
         echo "Fixing re-exports in $tbd"
         substituteInPlace "$tbd" ${mkFrameworkSubs name deps}
 
