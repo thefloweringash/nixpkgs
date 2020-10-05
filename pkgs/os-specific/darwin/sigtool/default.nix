@@ -6,8 +6,8 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "thefloweringash";
     repo = "sigtool";
-    rev = "262e5071f16d12d706eb86e7d627cc37e7c6e1b7";
-    sha256 = "05qnkzh8rxplk59jrv48rcdlqpk75p8j3kk0f2gmkjvfmi184qpy";
+    rev = "5426e3918754bf5f771b1b7da6fc60181ba49ec2";
+    sha256 = "171dlamli4clxgwj4shx92xywx13prbbhbsvsc1pyb2zdhq7sxr0";
   };
 
   nativeBuildInputs = [ pkg-config cmake ];
