@@ -1,7 +1,7 @@
 { stdenvNoCC, MacOSX-SDK, libcharset }:
 
 stdenvNoCC.mkDerivation {
-  pname = "libiconv";
+  pname = "libcharset";
   version = MacOSX-SDK.version;
 
   dontUnpack = true;

@@ -34,6 +34,7 @@ let
     LibsystemCross = pkgs.darwin.Libsystem;
     libiconv = callPackage ./libiconv.nix {};
     libcharset = callPackage ./libcharset.nix {};
+    libunwind = callPackage ./libunwind.nix {};
     objc4 = callPackage ./libobjc.nix {};
     ICU = callPackage ./ICU {};
 
