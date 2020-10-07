@@ -1,4 +1,4 @@
-{ lowPrio, newScope, pkgs, stdenv, cmake, gccForLibs
+{ lowPrio, newScope, pkgs, stdenv, CFCrossStdenv,  cmake, gccForLibs
 , libxml2, python3, isl, fetchurl, overrideCC, wrapCCWith, wrapBintoolsWith
 , buildPackages
 , buildLlvmTools # tools, but from the previous stage, for cross
@@ -167,6 +167,7 @@ let
       libcxx = null;
       bintools = wrapBintoolsWith {
         bintools = pkgs.darwin.binutils-unwrapped;
+        # XXX: this is a departure from lldClangNoCompilerRt
         # libc = null; -- only ok with pure libSystem
       };
       extraPackages = [ ];
@@ -197,7 +198,7 @@ let
     compiler-rt = let
       stdenv_ =
         if stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)
-          then overrideCC stdenv buildLlvmTools.cctoolsClangNoCompilerRt
+          then overrideCC CFCrossStdenv buildLlvmTools.cctoolsClangNoCompilerRt
         else if stdenv.hostPlatform.useLLVM or false
           then overrideCC stdenv buildLlvmTools.lldClangNoCompilerRt
         else null;
@@ -213,7 +214,7 @@ let
     libcxx = let
       stdenv_ =
         if stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)
-          then overrideCC stdenv buildLlvmTools.cctoolsClangNoLibcxx
+          then overrideCC CFCrossStdenv buildLlvmTools.cctoolsClangNoLibcxx
         else if stdenv.hostPlatform.useLLVM or false
           then overrideCC stdenv buildLlvmTools.lldClangNoLibcxx
         else null;
@@ -225,7 +226,7 @@ let
     libcxxabi = let
       stdenv_ =
         if stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)
-          then overrideCC stdenv buildLlvmTools.cctoolsClangNoLibcxx
+          then overrideCC CFCrossStdenv buildLlvmTools.cctoolsClangNoLibcxx
         else if stdenv.hostPlatform.useLLVM or false
           then overrideCC stdenv buildLlvmTools.lldClangNoLibcxx
         else null;

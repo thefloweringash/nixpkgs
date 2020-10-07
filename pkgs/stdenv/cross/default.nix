@@ -55,7 +55,9 @@ in lib.init bootStages ++ [
       overrides = _: _: {
         horribleDebugHacks = buildPackages;
       };
-      extraBuildInputs = [ ]; # Old ones run on wrong platform
+      extraBuildInputs = [ ] # Old ones run on wrong platform
+         ++ lib.optionals hostPlatform.isDarwin [ buildPackages.targetPackages.darwin.CFCross ]
+         ;
       allowedRequisites = null;
 
       hasCC = !targetPlatform.isGhcjs;
@@ -89,8 +91,8 @@ in lib.init bootStages ++ [
         ++ lib.optional (hostPlatform.config == "x86_64-w64-mingw32") buildPackages.file
         ;
 
-      extraNativeBuildInputsPostStrip =
-        lib.optional (hostPlatform.isAarch64 && hostPlatform.isDarwin) buildPackages.darwin.autoSignDarwinBinariesHook;
+      extraNativeBuildInputsPostStrip = lib.optional (hostPlatform.isAarch64 && hostPlatform.isDarwin)
+        buildPackages.darwin.autoSignDarwinBinariesHook;
     });
   })
 

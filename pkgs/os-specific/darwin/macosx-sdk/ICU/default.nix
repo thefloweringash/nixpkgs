@@ -1,5 +1,8 @@
-{ stdenv, fetchurl, buildPackages, buildRoot ? false }:
+{ CFCrossStdenv, fetchurl, buildPackages, buildRoot ? false }:
 
+let
+  stdenv = CFCrossStdenv;
+in
 stdenv.mkDerivation rec {
   pname = "ICU${stdenv.lib.optionalString buildRoot "-build-root"}";
   version = "531.48";
