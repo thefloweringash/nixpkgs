@@ -24,8 +24,9 @@ in stdenv.mkDerivation rec {
     sha256 = "102ssayxbg9wb35mdmhswbnw0bg7js3pfd8fcbic83c5q3bqa6c6";
   };
 
-  nativeBuildInputs = [ perl yacc flex ];
-  buildInputs = [ buildPackages.darwin.bsdmake flex ];
+  nativeBuildInputs = [ perl yacc flex buildPackages.darwin.bsdmake ];
+  buildInputs = [ flex ];
+  depsBuildBuild = [ buildPackages.stdenv.cc ]; # to build colldef and mklocale during build
 
   patchPhase = ''
     substituteInPlace BSDmakefile \
@@ -69,7 +70,7 @@ in stdenv.mkDerivation rec {
 
     bsdmake -C usr-share-locale.tproj
 
-    clang ${recentAdvCmds}/ps/*.c -o ps
+    ${stdenv.cc.targetPrefix}clang ${recentAdvCmds}/ps/*.c -o ps
   '';
 
   installPhase = ''
