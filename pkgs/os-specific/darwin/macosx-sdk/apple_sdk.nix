@@ -1,6 +1,8 @@
-{ stdenv, buildPackages, fetchurl, xar, cpio, pkgs, python3, pbzx, lib, MacOSX-SDK }:
+{ stdenvNoCC, buildPackages, fetchurl, xar, cpio, pkgs, python3, pbzx, lib, MacOSX-SDK }:
 
 let
+  stdenv = stdenvNoCC;
+
   mkFrameworkSubs = name: deps:
   let
     deps' = deps // { "${name}" = placeholder "out"; };

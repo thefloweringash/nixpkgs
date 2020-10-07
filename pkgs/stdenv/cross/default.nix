@@ -56,7 +56,7 @@ in lib.init bootStages ++ [
         horribleDebugHacks = buildPackages;
       };
       extraBuildInputs = [ ] # Old ones run on wrong platform
-         ++ lib.optionals hostPlatform.isDarwin [ buildPackages.targetPackages.darwin.CFCross ]
+         ++ lib.optionals hostPlatform.isDarwin [ buildPackages.targetPackages.darwin.apple_sdk.frameworks.CoreFoundation ]
          ;
       allowedRequisites = null;
 
