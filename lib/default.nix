@@ -10,6 +10,13 @@ let
   lib = makeExtensible (self: let
     callLibs = file: import file { lib = self; };
   in with self; {
+    # TODO: delete me
+    prStdenv = desc: stdenv:
+      if stdenv == null
+        then "${desc} is null"
+        else "${desc} (${stdenv.buildPlatform.system}, ${stdenv.hostPlatform.system}, ${stdenv.targetPlatform.system})";
+
+    showStdenv = desc: stdenv: builtins.trace (prStdenv desc stdenv);
 
     # often used, or depending on very little
     trivial = callLibs ./trivial.nix;

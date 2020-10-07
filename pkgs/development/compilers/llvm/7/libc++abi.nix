@@ -6,13 +6,6 @@
 assert (stdenv.hostPlatform != stdenv.buildPlatform) -> standalone;
 
 let
-  prStdenv = desc: stdenv:
-    if stdenv == null
-      then "${desc} is null"
-      else "${desc} (${stdenv.buildPlatform.system}, ${stdenv.hostPlatform.system}, ${stdenv.targetPlatform.system})";
-  showStdenv = desc: stdenv: builtins.trace (prStdenv desc stdenv);
-
-
 drv = stdenv.mkDerivation {
   pname = "libc++abi";
   inherit version;
@@ -66,4 +59,4 @@ drv = stdenv.mkDerivation {
   };
 };
 
-in showStdenv "${drv.drvPath} stdenv" stdenv drv
+in drv # showStdenv "${drv.drvPath} stdenv" stdenv drv

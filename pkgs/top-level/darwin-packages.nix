@@ -1,11 +1,9 @@
-{ buildPackages, pkgs, targetPackages
+{ lib, buildPackages, pkgs, targetPackages
 , darwin, stdenv, callPackage, callPackages, newScope
-, makeSetupHook
+, makeSetupHook, CFCrossStdenv
 }:
 
 let
-  useNewSDK = stdenv.hostPlatform.isAarch64;
-
   # Open source packages that are built from source
   appleSourcePackages = callPackage ../os-specific/darwin/apple-source-releases {};
 
@@ -22,7 +20,7 @@ let
   chooseLibs = {
     inherit (
       if stdenv.hostPlatform.isAarch64
-        then apple_sdk
+        then new_apple_sdk
         else appleSourcePackages
     ) Libsystem LibsystemCross libcharset libunwind objc4 ICU configd IOKit;
   };
@@ -85,7 +83,6 @@ in
       }.${parsed.cpu.name};
     in {
       inherit (targetPackages.stdenv.cc or stdenv.cc) targetPrefix;
-      arch = iosPlatformArch stdenv.targetPlatform;
     };
     deps = [ darwin.sigtool ];
   } ../os-specific/darwin/sigtool/setup-hook.nix;
@@ -127,6 +124,56 @@ in
   CoreSymbolication = callPackage ../os-specific/darwin/CoreSymbolication { };
 
   CF = callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
+
+  # this is really a pain
+  # - we want our stdenv to contain CF.
+  # - non-cross does this in a bootstrap phase.
+  # - adding extra phases to cross messes up package adjacencies.
+  # => we define a "CF" package that does not depend on stdenv directly,
+  #    but everything in the dependency tree uses CFCrossStdenv or CFCrossStdenvNoCC, which
+  #    are simple aliases to remove extraBuildInputs.
+  # TODO: find a better way
+  #  - it's likely safe to say that all stdenvNoCC variants never require extraBuildInputs
+  #  - so replace CFCrossStdenvNoCC with stdenvNoCC
+  #  - which just leaves libxml2, zlib and curl
+  # CFCross = pkgs.darwin.CFCrossPkgs.hello;
+  CFCross = pkgs.darwin.CFCrossPkgs.CF;
+
+  CFCrossPkgs = let
+    packages = rec {
+      hello = pkgs.hello.override {
+        stdenv = CFCrossStdenv;
+      };
+
+      libxml2 = pkgs.libxml2.override {
+        stdenv = pkgs.CFCrossStdenv;
+        pythonSupport = false;
+        icuSupport = false;
+        zlib = pkgs.zlib.override {
+          stdenv = pkgs.CFCrossStdenv;
+        };
+      };
+
+      curl = pkgs.curl.override {
+        stdenv = pkgs.CFCrossStdenv;
+        http2Support = false;
+        idnSupport = false;
+        ldapSupport = false;
+        zlibSupport = false;
+        sslSupport = false;
+        gnutlsSupport = false;
+        scpSupport = false;
+        gssSupport = false;
+        c-aresSupport = false;
+        brotliSupport = false;
+      };
+
+      CF = pkgs.darwin.CF.override {
+        stdenv = pkgs.CFCrossStdenv;
+        inherit libxml2 curl;
+      };
+    };
+  in packages;
 
   # As the name says, this is broken, but I don't want to lose it since it's a direction we want to go in
   # libdispatch-broken = callPackage ../os-specific/darwin/swift-corelibs/libdispatch.nix { inherit (darwin) apple_sdk_sierra xnu; };
