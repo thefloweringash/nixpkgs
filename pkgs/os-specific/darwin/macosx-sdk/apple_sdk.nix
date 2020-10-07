@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, xar, cpio, pkgs, python3, pbzx, lib, MacOSX-SDK, print-reexports }:
+{ stdenv, buildPackages, fetchurl, xar, cpio, pkgs, python3, pbzx, lib, MacOSX-SDK }:
 
 let
   mkFrameworkSubs = name: deps:
@@ -18,7 +18,7 @@ let
 
     disallowedRequisites = [ MacOSX-SDK ];
 
-    nativeBuildInputs = [ print-reexports ];
+    nativeBuildInputs = [ buildPackages.darwin.print-reexports ];
 
     extraTBDFiles = [];
 
