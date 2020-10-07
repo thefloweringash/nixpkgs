@@ -4,37 +4,39 @@
 }:
 
 let
-  useAppleSDK = stdenv.hostPlatform.isAarch64;
+  useNewSDK = stdenv.hostPlatform.isAarch64;
 
-  appleSourcePackages =
-    callPackage ../os-specific/darwin/apple-source-releases {};
+  # Open source packages that are built from source
+  appleSourcePackages = callPackage ../os-specific/darwin/apple-source-releases {};
 
-  appleSDK =
-    callPackage ../os-specific/darwin/macosx-sdk {};
+  # macOS 11.0 / 10.16 SDK (TODO: fix naming)
+  new_apple_sdk = callPackage ../os-specific/darwin/macosx-sdk { };
 
-  sdkPackages = (builtins.trace "(${stdenv.buildPlatform.config}, ${stdenv.hostPlatform.config}, ${stdenv.targetPlatform.config}) -> useAppleSDK = ${builtins.toJSON useAppleSDK}") (
-    if useAppleSDK then appleSDK else appleSourcePackages
-  );
+  # macOS 10.12 SDK
+  old_apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
+    inherit (darwin) darwin-stubs print-reexports;
+  };
+
+  apple_sdk = if stdenv.hostPlatform.isAarch64 then new_apple_sdk else old_apple_sdk;
+
+  chooseLibs = {
+    inherit (
+      if stdenv.hostPlatform.isAarch64
+        then apple_sdk
+        else appleSourcePackages
+    ) Libsystem LibsystemCross libcharset libunwind objc4 ICU configd IOKit;
+  };
 in
 
-assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
+(appleSourcePackages // chooseLibs // {
 
-(sdkPackages // {
+  inherit apple_sdk;
 
   callPackage = newScope (darwin.apple_sdk.frameworks // darwin);
 
   stdenvNoCF = stdenv.override {
     extraBuildInputs = [];
   };
-
-  apple_sdk = if useAppleSDK then
-    callPackage ../os-specific/darwin/macosx-sdk/apple_sdk.nix {
-      inherit (darwin) MacOSX-SDK print-reexports;
-    }
-  else
-    callPackage ../os-specific/darwin/apple-sdk {
-      inherit (darwin) darwin-stubs print-reexports;
-    };
 
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (darwin) cctools;
@@ -43,12 +45,17 @@ assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
   };
 
   binutils = pkgs.wrapBintoolsWith {
-    libc = (x: builtins.trace ("darwin setting binutils.libc=${x}") x)(
-      if stdenv.targetPlatform.isAarch64 then appleSDK.Libsystem else  pkgs.stdenv.cc.libc);
-      # if stdenv.hostPlatform.isAarch64 then pkgs.stdenv.cc.libc
-      # else if (stdenv.targetPlatform != stdenv.hostPlatform) && !useAppleSDK
-      # then assert false; pkgs.libcCross
-      # else pkgs.stdenv.cc.libc;
+    libc = (x: builtins.trace ("darwin (target=${stdenv.targetPlatform.config}) setting binutils.libc=${x}") x) (
+
+      if stdenv.targetPlatform.isAarch64
+      then new_apple_sdk.Libsystem
+      else pkgs.stdenv.cc.libc
+
+      ## TODO: this looks correct but goes into infinite recursing territory
+      ## if stdenv.targetPlatform != stdenv.hostPlatform
+      ## then pkgs.libcCross
+      ## else pkgs.stdenv.cc.libc
+    );
     bintools = darwin.binutils-unwrapped;
   };
 
@@ -98,7 +105,7 @@ assert (stdenv.buildPlatform != stdenv.hostPlatform) -> useAppleSDK;
 
   iproute2mac = callPackage ../os-specific/darwin/iproute2mac { };
 
-  libobjc = sdkPackages.objc4;
+  libobjc = pkgs.darwin.objc4;
 
   lsusb = callPackage ../os-specific/darwin/lsusb { };
 

@@ -25,25 +25,22 @@ let
 
   callPackage = newScope (packages // pkgs.darwin // { inherit MacOSX-SDK; });
 
-  adv_cmds-boot = callPackage ./adv_cmds/boot.nix {};
-
   packages = {
-    inherit MacOSX-SDK;
+    inherit (callPackage ./apple_sdk.nix {}) frameworks libs;
+
+    # TODO: this is nice to be private. is it worth the callPackage above?
+    # Probably, I don't think that callPackage costs much at all.
+    # inherit MacOSX-SDK;
 
     Libsystem = callPackage ./libSystem.nix {};
     LibsystemCross = pkgs.darwin.Libsystem;
-    libiconv = callPackage ./libiconv.nix {};
     libcharset = callPackage ./libcharset.nix {};
     libunwind = callPackage ./libunwind.nix {};
     objc4 = callPackage ./libobjc.nix {};
     ICU = callPackage ./ICU {};
 
-    # alias
+    # questionable aliases
     configd = pkgs.darwin.apple_sdk.frameworks.SystemConfiguration;
     IOKit = pkgs.darwin.apple_sdk.frameworks.IOKit;
-
-    # built from source, non-libraries
-    inherit (adv_cmds-boot) ps locale;
-    bsdmake = callPackage ./bsdmake {};
   };
 in packages
