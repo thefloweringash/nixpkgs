@@ -30,9 +30,9 @@ stdenv.mkDerivation rec {
 
   outputs = [ "out" "info" ];
 
-  buildInputs = [ ]
-    ++ stdenv.lib.optional stdenv.isLinux acl
-    ++ stdenv.lib.optional stdenv.isDarwin autoreconfHook;
+  buildInputs = stdenv.lib.optional stdenv.isLinux acl;
+
+  nativeBuildInputs = stdenv.lib.optional stdenv.isDarwin autoreconfHook;
 
   # May have some issues with root compilation because the bootstrap tool
   # cannot be used as a login shell for now.
