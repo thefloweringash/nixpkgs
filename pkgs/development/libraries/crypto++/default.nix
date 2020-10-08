@@ -21,14 +21,22 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = optionals stdenv.hostPlatform.isx86 [ nasm which ];
 
+  # TODO: upstream this, or at least sort out with upstream.  there's been a
+  # lot of churn in this area upstream, including a third competing
+  # implementation of configuration. Maybe that one, once released, will work
+  # better?
+  patches = optional (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
+    ./allow-acle-on-apple.patch
+  ];
+
   preBuild = optionalString stdenv.hostPlatform.isx86 "${stdenv.shell} rdrand-nasm.sh";
   makeFlags = [ "PREFIX=${placeholder "out"}" ];
   buildFlags = [ "shared" "libcryptopp.pc" ];
   enableParallelBuilding = true;
 
-  doCheck = true;
+  doCheck = stdenv.buildPlatform == stdenv.hostPlatform;
 
-  preInstall = "rm libcryptopp.a"; # built for checks but we don't install static lib into the nix store
+  preInstall = optionalString doCheck "rm libcryptopp.a"; # built for checks but we don't install static lib into the nix store
   installTargets = [ "install-lib" ];
   installFlags = [ "LDCONF=true" ];
   postInstall = optionalString (!stdenv.hostPlatform.isDarwin) ''
