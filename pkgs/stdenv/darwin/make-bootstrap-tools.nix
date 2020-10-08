@@ -35,7 +35,9 @@ in rec {
     singleBinary = false;
   });
 
-  cctools_ = darwin.cctools;
+  cctools_ = darwin.cctools.override {
+    inherit (llvmPackages) libcxxabi;
+  };
 
   # Avoid debugging larger changes for now.
   bzip2_ = bzip2.override (args: { linkStatic = true; });
@@ -124,8 +126,6 @@ in rec {
       done
 
       cp -d ${darwin.libtapi}/lib/libtapi* $out/lib
-
-      cp -rd ${pkgs.darwin.CF}/Library $out
 
       chmod -R u+w $out
 
