@@ -1,7 +1,7 @@
 { stdenvNoCC, buildPackages, MacOSX-SDK }:
 
 stdenvNoCC.mkDerivation {
-  pname = "libcharset";
+  pname = "libnetwork";
   version = MacOSX-SDK.version;
 
   dontUnpack = true;
@@ -10,7 +10,7 @@ stdenvNoCC.mkDerivation {
   nativeBuildInputs = [ buildPackages.darwin.checkReexportsHook ];
 
   installPhase = ''
-    mkdir -p $out/{include,lib}
-    cp ${MacOSX-SDK}/usr/lib/libcharset* $out/lib
+    mkdir -p $out/lib
+    cp ${MacOSX-SDK}/usr/lib/libnetwork* $out/lib
   '';
 }

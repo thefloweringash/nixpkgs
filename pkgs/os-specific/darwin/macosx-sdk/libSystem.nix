@@ -1,4 +1,4 @@
-{ stdenvNoCC, MacOSX-SDK }:
+{ stdenvNoCC, buildPackages, MacOSX-SDK }:
 
 stdenvNoCC.mkDerivation {
   pname = "libSystem";
@@ -6,6 +6,8 @@ stdenvNoCC.mkDerivation {
 
   dontBuild = true;
   dontUnpack = true;
+
+  nativeBuildInputs = [ buildPackages.darwin.checkReexportsHook ];
 
   includeDirs = [
     "CommonCrypto" "_types" "architecture" "arpa" "atm" "bank" "bsd" "bsm"

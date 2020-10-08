@@ -6,8 +6,8 @@ let
     version = "11.0.0";
 
     src = fetchurl {
-      url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/apple-silicon-wip/beta-sdk-linked.tar.gz";
-      sha256 = "03l4rbcfl5vfvxhr9dakh8199grw814kivjhph3rbvrzd6hz34sa";
+      url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/apple-silicon-wip/beta-sdk-linked-2.tar.gz";
+      sha256 = "15z02wv3vi63la71clf0nwk5k8g2qvkxpi61yvs0ic8bb9g2sd55";
     };
 
     dontBuild = true;
@@ -36,6 +36,7 @@ let
     LibsystemCross = pkgs.darwin.Libsystem;
     libcharset = callPackage ./libcharset.nix {};
     libunwind = callPackage ./libunwind.nix {};
+    libnetwork = callPackage ./libnetwork.nix {};
     objc4 = callPackage ./libobjc.nix {};
     ICU = callPackage ./ICU {};
 
