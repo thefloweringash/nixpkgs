@@ -1,5 +1,7 @@
 { stdenvNoCC, buildPackages, fetchurl, xar, cpio, pkgs, python3, pbzx, lib, MacOSX-SDK }:
 
+# TODO: reorganize to make this just frameworks, and move libs to default.nix
+
 let
   stdenv = stdenvNoCC;
 
@@ -9,8 +11,8 @@ let
     substArgs = lib.concatMap (x: [ "--subst-var-by" x deps'."${x}" ]) (lib.attrNames deps');
   in lib.escapeShellArgs substArgs;
 
-  framework = name: deps: stdenv.mkDerivation {
-    pname = "apple-framework-${name}";
+  mkFramework = { name, deps, private ? false }: stdenv.mkDerivation {
+    pname = "apple-${lib.optionalString private "private-"}framework-${name}";
     version = MacOSX-SDK.version;
 
     dontUnpack = true;
@@ -20,31 +22,17 @@ let
 
     disallowedRequisites = [ MacOSX-SDK ];
 
-    nativeBuildInputs = [ buildPackages.darwin.print-reexports ];
-
-    extraTBDFiles = [];
+    nativeBuildInputs = [ buildPackages.darwin.checkReexportsHook ];
 
     installPhase = ''
       mkdir -p $out/Library/Frameworks
 
-      cp -vr ${MacOSX-SDK}/System/Library/Frameworks/${name}.framework $out/Library/Frameworks
+      cp -r ${MacOSX-SDK}/System/Library/${lib.optionalString private "Private"}Frameworks/${name}.framework $out/Library/Frameworks
 
       # Fix and check tbd re-export references
       find $out -name '*.tbd' -type f | while read tbd; do
         echo "Fixing re-exports in $tbd"
         substituteInPlace "$tbd" ${mkFrameworkSubs name deps}
-
-        echo "Checking re-exports in $tbd"
-        print-reexports "$tbd" | while read target; do
-          local expected="''${target%.dylib}.tbd"
-          if ! [ -e "$expected" ]; then
-            echo -e "Re-export missing:\n\t$target\n\t(expected $expected)"
-            echo -e "While processing\n\t$tbd"
-            exit 1
-          else
-            echo "Re-exported target $target ok"
-          fi
-        done
       done
     '';
 
@@ -57,16 +45,8 @@ let
     };
   };
 
-  tbdOnlyFramework = name: { private ? true }: stdenv.mkDerivation {
-    name = "apple-framework-${name}";
-    dontUnpack = true;
-    installPhase = ''
-      mkdir -p $out/Library/Frameworks/
-      cp -r ${MacOSX-SDK}/System/Library/${lib.optionalString private "Private"}Frameworks/${name}.framework \
-        $out/Library/Frameworks
-      # NOTE there's no re-export checking here, this is probably wrong
-    '';
-  };
+  framework = name: deps: mkFramework { inherit name deps; private = false; };
+  privateFramework = name: deps: mkFramework { inherit name deps; private = true; };
 in rec {
   libs = {
     xpc = stdenv.mkDerivation {
@@ -112,12 +92,19 @@ in rec {
     };
   };
 
-  overrides = super: lib.genAttrs [ "ContactsPersistence" "UIFoundation" "GameCenter" ] (x: tbdOnlyFramework x {});
+  overrides = super: {};
 
-  bareFrameworks = stdenv.lib.mapAttrs framework (import ./frameworks.nix {
-    inherit frameworks libs;
-    inherit (pkgs.darwin) libobjc;
-  });
+  bareFrameworks = (
+    stdenv.lib.mapAttrs framework (import ./frameworks.nix {
+      inherit frameworks libs;
+      inherit (pkgs.darwin) libobjc Libsystem;
+      inherit (pkgs.darwin.apple_sdk) libnetwork;
+    })
+  ) // (
+    stdenv.lib.mapAttrs privateFramework (import ./private-frameworks.nix {
+      inherit frameworks;
+    })
+  );
 
   frameworks = bareFrameworks // overrides bareFrameworks;
 }
