@@ -1,5 +1,9 @@
 { stdenv, fetchFromGitHub, pkg-config, cmake, cryptopp, cli11 }:
 
+let
+  inherit (stdenv) lib;
+in
+
 stdenv.mkDerivation {
   name = "sigtool";
 
@@ -12,6 +16,11 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ pkg-config cmake ];
   buildInputs = [ cryptopp cli11 ];
+
+  # TODO: push this and mass rebuild
+  patches = lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
+    ./deprecated-stat64.patch
+  ];
 
   installPhase = ''
     mkdir -p $out/bin

@@ -56,10 +56,6 @@ in rec {
       # Copy libSystem's .o files for various low-level boot stuff.
       cp -d ${darwin.Libsystem}/lib/*.o $out/lib
 
-      # Resolv is actually a link to another package, so let's copy it properly
-      cp -L ${darwin.Libsystem}/lib/libresolv.9.dylib $out/lib
-
-      cp -rL ${darwin.Libsystem}/include $out
       chmod -R u+w $out/include
       cp -rL ${darwin.ICU}/include*             $out/include
       cp -rL ${libiconv}/include/*       $out/include
@@ -112,6 +108,10 @@ in rec {
       mkdir $out/include
       cp -rd ${llvmPackages.libcxx}/include/c++     $out/include
 
+      # copy sigtool and dependencies
+      cp ${pkgs.darwin.sigtool}/bin/gensig $out/bin
+      cp ${pkgs.cryptopp}lib/libcryptopp*.dylib $out/lib
+
       cp -d ${darwin.ICU}/lib/libicu*.dylib $out/lib
       cp -d ${zlib.out}/lib/libz.*       $out/lib
       cp -d ${gmpxx.out}/lib/libgmp*.*   $out/lib
@@ -131,7 +131,7 @@ in rec {
       rpathify() {
         local libs=$(${cctools_}/bin/otool -L "$1" | tail -n +2 | grep -o "$NIX_STORE.*-\S*") || true
         for lib in $libs; do
-          ${cctools_}/bin/install_name_tool -change $lib "@rpath/$(basename $lib)" "$1"
+          ${stdenv.cc.targetPrefix}install_name_tool -change $lib "@rpath/$(basename $lib)" "$1"
         done
       }
 
