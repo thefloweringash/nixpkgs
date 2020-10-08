@@ -1,7 +1,7 @@
 { stdenv, buildPackages, lib
 , fetchurl, fetchpatch, fetchFromSavannah, fetchFromGitHub
 , zlib, openssl, gdbm, ncurses, readline, groff, libyaml, libffi, autoreconfHook, bison
-, autoconf, libiconv, libobjc, libunwind, Foundation
+, autoconf, libiconv, libobjc, libunwind, Foundation, Security
 , buildEnv, bundler, bundix
 , makeWrapper, buildRubyGem, defaultGemConfig, removeReferencesTo
 } @ args:
@@ -51,7 +51,7 @@ let
       , removeReferencesTo, removeReferenceToCC ? true
       , autoreconfHook, bison, autoconf
       , buildEnv, bundler, bundix
-      , libiconv, libobjc, libunwind, Foundation
+      , libiconv, libobjc, libunwind, Foundation, Security
       , makeWrapper, buildRubyGem, defaultGemConfig
       }:
       stdenv.mkDerivation rec {
@@ -88,7 +88,7 @@ let
           # support is disabled (if it's enabled, we already have it) and we're
           # running on darwin
           ++ op (!cursesSupport && stdenv.isDarwin) readline
-          ++ ops stdenv.isDarwin [ libiconv libobjc libunwind Foundation ];
+          ++ ops stdenv.isDarwin [ libiconv libobjc libunwind Foundation Security ];
 
         enableParallelBuilding = true;
 
