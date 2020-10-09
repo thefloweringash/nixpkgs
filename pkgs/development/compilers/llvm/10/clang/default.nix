@@ -34,6 +34,8 @@ let
       "-DSPHINX_OUTPUT_MAN=ON"
       "-DSPHINX_OUTPUT_HTML=OFF"
       "-DSPHINX_WARNINGS_AS_ERRORS=OFF"
+    ] ++ stdenv.lib.optionals (stdenv.buildPlatform != stdenv.hostPlatform) [
+      "-DLLVM_CONFIG_PATH=${llvm}/bin/llvm-config-native"
     ];
 
     patches = [
