@@ -1,4 +1,5 @@
 { stdenv, fetch, cmake, libxml2, llvm, version, clang-tools-extra_src, python3, lld
+, buildPackages, pkgsBuildBuild
 , fixDarwinDylibNames
 , enableManpages ? false
 }:
@@ -18,7 +19,7 @@ let
       mv clang-tools-extra-* $sourceRoot/tools/extra
     '';
 
-    nativeBuildInputs = [ cmake python3 lld ]
+    nativeBuildInputs = [ cmake python3 buildPackages.llvmPackages_10.lld ]
       ++ stdenv.lib.optional enableManpages python3.pkgs.sphinx;
 
     buildInputs = [ libxml2 llvm ]
@@ -34,8 +35,23 @@ let
       "-DSPHINX_OUTPUT_MAN=ON"
       "-DSPHINX_OUTPUT_HTML=OFF"
       "-DSPHINX_WARNINGS_AS_ERRORS=OFF"
-    ] ++ stdenv.lib.optionals (stdenv.buildPlatform != stdenv.hostPlatform) [
+    ] ++ stdenv.lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
       "-DLLVM_CONFIG_PATH=${llvm}/bin/llvm-config-native"
+      "-DCMAKE_CROSSCOMPILING=True"
+      "-DLLVM_TABLEGEN_EXE=${buildPackages.llvm_10}/bin/llvm-tblgen"
+      (
+        let
+          nativeCC = pkgsBuildBuild.stdenv.cc;
+          nativeBintools = nativeCC.bintools.bintools;
+          nativeToolchainFlags = [
+            "-DCMAKE_C_COMPILER=${nativeCC}/bin/${nativeCC.targetPrefix}cc"
+            "-DCMAKE_CXX_COMPILER=${nativeCC}/bin/${nativeCC.targetPrefix}c++"
+            "-DCMAKE_AR=${nativeBintools}/bin/${nativeBintools.targetPrefix}ar"
+            "-DCMAKE_STRIP=${nativeBintools}/bin/${nativeBintools.targetPrefix}strip"
+            "-DCMAKE_RANLIB=${nativeBintools}/bin/${nativeBintools.targetPrefix}ranlib"
+          ];
+        in "-DCROSS_TOOLCHAIN_FLAGS_NATIVE:list=${stdenv.lib.concatStringsSep ";" nativeToolchainFlags}"
+      )
     ];
 
     patches = [

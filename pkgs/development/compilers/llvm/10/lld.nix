@@ -1,4 +1,5 @@
 { stdenv
+, buildPackages
 , fetch
 , cmake
 , libxml2
@@ -16,6 +17,7 @@ stdenv.mkDerivation rec {
   buildInputs = [ llvm libxml2 ];
 
   cmakeFlags = stdenv.lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+    "-DLLVM_TABLEGEN_EXE=${buildPackages.llvm_10}/bin/llvm-tblgen"
     "-DLLVM_CONFIG_PATH=${llvm}/bin/llvm-config-native"
   ];
 
