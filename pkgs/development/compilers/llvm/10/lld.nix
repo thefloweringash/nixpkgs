@@ -15,6 +15,10 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [ cmake ];
   buildInputs = [ llvm libxml2 ];
 
+  cmakeFlags = stdenv.lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+    "-DLLVM_CONFIG_PATH=${llvm}/bin/llvm-config-native"
+  ];
+
   outputs = [ "out" "dev" ];
 
   enableParallelBuilding = true;
