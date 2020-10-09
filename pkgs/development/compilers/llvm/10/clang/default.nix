@@ -37,21 +37,8 @@ let
       "-DSPHINX_WARNINGS_AS_ERRORS=OFF"
     ] ++ stdenv.lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
       "-DLLVM_CONFIG_PATH=${llvm}/bin/llvm-config-native"
-      "-DCMAKE_CROSSCOMPILING=True"
       "-DLLVM_TABLEGEN_EXE=${buildPackages.llvm_10}/bin/llvm-tblgen"
-      (
-        let
-          nativeCC = pkgsBuildBuild.stdenv.cc;
-          nativeBintools = nativeCC.bintools.bintools;
-          nativeToolchainFlags = [
-            "-DCMAKE_C_COMPILER=${nativeCC}/bin/${nativeCC.targetPrefix}cc"
-            "-DCMAKE_CXX_COMPILER=${nativeCC}/bin/${nativeCC.targetPrefix}c++"
-            "-DCMAKE_AR=${nativeBintools}/bin/${nativeBintools.targetPrefix}ar"
-            "-DCMAKE_STRIP=${nativeBintools}/bin/${nativeBintools.targetPrefix}strip"
-            "-DCMAKE_RANLIB=${nativeBintools}/bin/${nativeBintools.targetPrefix}ranlib"
-          ];
-        in "-DCROSS_TOOLCHAIN_FLAGS_NATIVE:list=${stdenv.lib.concatStringsSep ";" nativeToolchainFlags}"
-      )
+      "-DCLANG_TABLEGEN=${buildPackages.llvmPackages_10.clang-unwrapped.tablegen}/bin/clang-tblgen"
     ];
 
     patches = [
@@ -74,7 +61,7 @@ let
         --replace "NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB" FALSE
     '';
 
-    outputs = [ "out" "lib" "python" ];
+    outputs = [ "out" "lib" "python" "tablegen" ];
 
     # Clang expects to find LLVMgold in its own prefix
     postInstall = ''
@@ -98,6 +85,9 @@ let
       fi
       mv $out/share/clang/*.py $python/share/clang
       rm $out/bin/c-index-test
+
+      mkdir -p $tablegen/bin
+      cp bin/clang-tblgen $tablegen/bin
     '';
 
     enableParallelBuilding = true;
