@@ -35,9 +35,7 @@ in rec {
     singleBinary = false;
   });
 
-  cctools_ = darwin.cctools.override {
-    inherit (llvmPackages) libcxxabi;
-  };
+  cctools_ = darwin.cctools;
 
   # Avoid debugging larger changes for now.
   bzip2_ = bzip2.override (args: { linkStatic = true; });
