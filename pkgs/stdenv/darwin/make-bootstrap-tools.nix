@@ -46,15 +46,15 @@ in rec {
   build = stdenv.mkDerivation {
     name = "stdenv-bootstrap-tools";
 
-    buildInputs = [nukeReferences cpio];
+    nativeBuildInputs = [ buildPackages.nukeReferences buildPackages.cpio ];
 
     buildCommand = ''
-      mkdir -p $out/bin $out/lib $out/lib/system
+      set -x
+      mkdir -p $out/bin $out/lib $out/lib/system $out/include
 
-      # libsystem is entirely fetched (TODO: what about Csu and or x86_64 bootstrap?)
+      # libsystem is entirely fetched (TODO: what about Csu and/or x86_64 bootstrap?)
       # so not included here
 
-      chmod -R u+w $out/include
       cp -rL ${darwin.ICU}/include*             $out/include
       cp -rL ${libiconv}/include/*       $out/include
       cp -rL ${gnugrep.pcre.dev}/include/*   $out/include
@@ -108,7 +108,7 @@ in rec {
 
       # copy sigtool and dependencies
       cp ${pkgs.darwin.sigtool}/bin/gensig $out/bin
-      cp ${pkgs.cryptopp}lib/libcryptopp*.dylib $out/lib
+      cp ${pkgs.cryptopp}/lib/libcryptopp*.dylib $out/lib
 
       cp -d ${darwin.ICU}/lib/libicu*.dylib $out/lib
       cp -d ${zlib.out}/lib/libz.*       $out/lib
@@ -127,7 +127,7 @@ in rec {
       nuke-refs $out/bin/*
 
       rpathify() {
-        local libs=$(${cctools_}/bin/otool -L "$1" | tail -n +2 | grep -o "$NIX_STORE.*-\S*") || true
+        local libs=$(${stdenv.cc.targetPrefix}otool -L "$1" | tail -n +2 | grep -o "$NIX_STORE.*-\S*") || true
         for lib in $libs; do
           ${stdenv.cc.targetPrefix}install_name_tool -change $lib "@rpath/$(basename $lib)" "$1"
         done
@@ -137,7 +137,7 @@ in rec {
       for i in $out/bin/*; do
         if test -x $i -a ! -L $i; then
           chmod +w $i
-          strip $i || true
+          ${stdenv.cc.targetPrefix}strip $i || true
         fi
       done
 
@@ -164,8 +164,12 @@ in rec {
       cp ${bzip2_.bin}/bin/bzip2 $out/on-server
 
       chmod u+w $out/on-server/*
-      strip $out/on-server/*
+      ${stdenv.cc.targetPrefix}strip $out/on-server/*
       nuke-refs $out/on-server/*
+
+      ${stdenv.lib.optionalString stdenv.hostPlatform.isAarch64 ''
+        signDarwinBinariesIn $out
+      ''}
 
       (cd $out/pack && (find | cpio -o -H newc)) | bzip2 > $out/on-server/bootstrap-tools.cpio.bz2
     '';

@@ -84,7 +84,7 @@ in
       inherit (targetPackages.stdenv.cc or stdenv.cc) targetPrefix;
     };
     deps = [ darwin.sigtool ];
-  } ../os-specific/darwin/sigtool/setup-hook.nix; # TODO .sh, not .nix, what
+  } ../os-specific/darwin/sigtool/setup-hook.sh;
 
   checkReexportsHook = makeSetupHook {
     deps = [ pkgs.darwin.print-reexports ];
