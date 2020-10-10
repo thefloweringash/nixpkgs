@@ -49,7 +49,6 @@ in rec {
     nativeBuildInputs = [ buildPackages.nukeReferences buildPackages.cpio ];
 
     buildCommand = ''
-      set -x
       mkdir -p $out/bin $out/lib $out/lib/system $out/include
 
       # Copy libSystem's .o files for various low-level boot stuff.
