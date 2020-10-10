@@ -12,13 +12,18 @@ stdenv.mkDerivation {
 
   sourceRoot = "source/src/llvm";
 
+  # Backported from newer llvm, fixes configure error when cross compiling.
+  # Also means we don't have to manually fix the result with install_name_tool.
+  patches = [ ./disable-rpath.patch ];
+
   nativeBuildInputs = [ cmake python3 ];
 
   # ncurses is required here to avoid a reference to bootstrap-tools, which is
   # not allowed for the stdenv.
   buildInputs = [ ncurses ];
 
-  cmakeFlags = [ "-DLLVM_INCLUDE_TESTS=OFF" ];
+  cmakeFlags = [ "-DLLVM_INCLUDE_TESTS=OFF" ]
+    ++ stdenv.lib.optional (stdenv.buildPlatform != stdenv.hostPlatform) [ "-DCMAKE_CROSSCOMPILING=True" ];
 
   # fixes: fatal error: 'clang/Basic/Diagnostic.h' file not found
   # adapted from upstream
@@ -33,10 +38,6 @@ stdenv.mkDerivation {
   buildFlags = [ "clangBasic" "libtapi" ];
 
   installTargets = [ "install-libtapi" "install-tapi-headers" ];
-
-  postInstall = stdenv.lib.optionalString stdenv.hostPlatform.isDarwin ''
-    ${stdenv.cc.targetPrefix}install_name_tool -id $out/lib/libtapi.dylib $out/lib/libtapi.dylib
-  '';
 
   meta = with lib; {
     license = licenses.apsl20;
