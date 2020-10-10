@@ -49,7 +49,6 @@ in rec {
     nativeBuildInputs = [ buildPackages.nukeReferences buildPackages.cpio ];
 
     buildCommand = ''
-      set -x
       mkdir -p $out/bin $out/lib $out/lib/system $out/include
 
       # libsystem is entirely fetched (TODO: what about Csu and/or x86_64 bootstrap?)
