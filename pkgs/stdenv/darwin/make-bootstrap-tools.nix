@@ -107,9 +107,13 @@ in rec {
       mkdir $out/include
       cp -rd ${llvmPackages.libcxx}/include/c++     $out/include
 
+      # copy print-reexports and dependencies
+      cp ${pkgs.darwin.print-reexports}/bin/print-reexports $out/bin
+      cp -d ${pkgs.libyaml}/lib/libyaml*.dylib $out/lib
+
       # copy sigtool and dependencies
       cp ${pkgs.darwin.sigtool}/bin/gensig $out/bin
-      cp ${pkgs.cryptopp}/lib/libcryptopp*.dylib $out/lib
+      cp -d ${pkgs.cryptopp}/lib/libcryptopp*.dylib $out/lib
 
       cp -d ${darwin.ICU}/lib/libicu*.dylib $out/lib
       cp -d ${zlib.out}/lib/libz.*       $out/lib
@@ -117,7 +121,7 @@ in rec {
       cp -d ${xz.out}/lib/liblzma*.*     $out/lib
 
       # Copy binutils.
-      for i in as ld ar ranlib nm strip otool install_name_tool lipo; do
+      for i in as ld ar ranlib nm strip otool install_name_tool lipo codesign_allocate; do
         cp ${cctools_}/bin/$i $out/bin
       done
 

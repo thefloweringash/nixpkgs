@@ -1,4 +1,4 @@
-{ lib, stdenv, fetch, cmake, python3, libcxxabi, fixDarwinDylibNames, version
+{ stdenv, fetch, cmake, python3, libcxxabi, fixDarwinDylibNames, version
 , enableShared ? true }:
 
 stdenv.mkDerivation {
@@ -17,7 +17,7 @@ stdenv.mkDerivation {
   preConfigure = ''
     # Get headers from the cxxabi source so we can see private headers not installed by the cxxabi package
     cmakeFlagsArray=($cmakeFlagsArray -DLIBCXX_CXX_ABI_INCLUDE_PATHS="$LIBCXXABI_INCLUDE_DIR")
-  '' + lib.optionalString stdenv.hostPlatform.isMusl ''
+  '' + stdenv.lib.optionalString stdenv.hostPlatform.isMusl ''
     patchShebangs utils/cat_files.py
   '';
   nativeBuildInputs = [ cmake ]
