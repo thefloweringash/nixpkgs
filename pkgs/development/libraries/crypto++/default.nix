@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, nasm, which }:
+{ stdenv, fetchFromGitHub, nasm, which, fixDarwinDylibNames }:
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
@@ -19,7 +19,9 @@ stdenv.mkDerivation rec {
         --replace "ARFLAGS = -static -o" "ARFLAGS = -cru"
   '';
 
-  nativeBuildInputs = optionals stdenv.hostPlatform.isx86 [ nasm which ];
+  nativeBuildInputs =
+    optionals stdenv.hostPlatform.isx86 [ nasm which ]
+    ++ optionals stdenv.hostPlatform.isDarwin [ fixDarwinDylibNames ];
 
   # TODO: upstream this, or at least sort out with upstream.  there's been a
   # lot of churn in this area upstream, including a third competing
