@@ -45,7 +45,7 @@ in
   binutils = pkgs.wrapBintoolsWith {
     libc = (x: builtins.trace ("darwin (target=${stdenv.targetPlatform.config}) setting binutils.libc=${x}") x) (
 
-      if stdenv.targetPlatform.isAarch64
+      if stdenv.targetPlatform.isAarch64 && (stdenv.buildPlatform != stdenv.targetPlatform)
       then new_apple_sdk.Libsystem
       else pkgs.stdenv.cc.libc
 
@@ -74,15 +74,7 @@ in
   sigtool = callPackage ../os-specific/darwin/sigtool { };
 
   autoSignDarwinBinariesHook = makeSetupHook {
-    substitutions = let
-      iosPlatformArch = { parsed, ... }: {
-        armv7a  = "armv7";
-        aarch64 = "arm64";
-        x86_64  = "x86_64";
-      }.${parsed.cpu.name};
-    in {
-      inherit (targetPackages.stdenv.cc or stdenv.cc) targetPrefix;
-    };
+    substitutions = { inherit (darwin.binutils) targetPrefix; };
     deps = [ darwin.sigtool ];
   } ../os-specific/darwin/sigtool/setup-hook.sh;
 

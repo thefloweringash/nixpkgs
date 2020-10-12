@@ -5,6 +5,8 @@ echo Unpacking the bootstrap tools...
 $mkdir $out
 $bzip2 -d < $tarball | (cd $out && $cpio -i)
 
+export PATH=$out/bin
+
 ln -s bash $out/bin/sh
 ln -s bzip2 $out/bin/bunzip2
 

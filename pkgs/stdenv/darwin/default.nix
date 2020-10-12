@@ -9,15 +9,15 @@
   if localSystem.isAarch64 then
     let
       fetch = { file, sha256, executable ? true }: import <nix/fetchurl.nix> {
-        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/c36723cebc9ded93aa709409837fdd8217d13dfb/${file}";
+        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/7ae4b5bade4a669e3c47f2ccda65f9cc8c4411a9/${file}";
         inherit (localSystem) system;
         inherit sha256 executable;
       }; in {
-        sh      = fetch { file = "sh";    sha256 = "0000000000000000000000000000000000000000000000000000"; };
-        bzip2   = fetch { file = "bzip2"; sha256 = "0000000000000000000000000000000000000000000000000000"; };
-        mkdir   = fetch { file = "mkdir"; sha256 = "0000000000000000000000000000000000000000000000000000"; };
-        cpio    = fetch { file = "cpio";  sha256 = "0000000000000000000000000000000000000000000000000000"; };
-        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "0000000000000000000000000000000000000000000000000000"; executable = false; };
+        sh      = fetch { file = "sh";    sha256 = "13in8qbcj655s6yslk6gmiywsv3d7kbib18x08hbd419bsg0kj6z"; };
+        bzip2   = fetch { file = "bzip2"; sha256 = "1pgi68jxfcjy5vwxvbns6b0ihwv8az6pzp51w5xzrvj7rp6naiv1"; };
+        mkdir   = fetch { file = "mkdir"; sha256 = "1wx025dca0gi934bwrzhxh1wkvq4vkz76mnnykfq7rx7pd656jrp"; };
+        cpio    = fetch { file = "cpio";  sha256 = "0l3glbahgai0wmasz450j2cjbjc4yi7dxj6r677w2ksfsfxh05rk"; };
+        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "1bxw8jylxl2hai6bbl5q214qqfd82pd0bmjiggylqyha3595hagw"; executable = false; };
       }
   else
     let
@@ -40,10 +40,13 @@ let
   inherit (localSystem) system platform;
 
   # Bootstrap version needs to be known to reference headers included in the bootstrap tools
-  bootstrapClangVersion = if localSystem.isAarch64 then "10.0.1" else "7.1.0";
+  bootstrapLlvmVersion = if localSystem.isAarch64 then "10.0.1" else "7.1.0";
 
-  # final toolchain is injected into llvmPackages_${finalClangVersion}
-  finalClangVersion = if localSystem.isAarch64 then "10" else "7";
+  pureLibsystem = localSystem.isAarch64;
+
+  # final toolchain is injected into llvmPackages_${finalLlvmVersion}
+  finalLlvmVersion = if localSystem.isAarch64 then "10" else "7";
+  finalLlvmPackages = (x: builtins.trace "injecting bootstrap tools into attribute: ${x}" x) "llvmPackages_${finalLlvmVersion}";
 
   commonImpureHostDeps = [
     "/bin/sh"
@@ -93,11 +96,17 @@ in rec {
         inherit (last) stdenv;
       };
 
+      doSign = localSystem.isAarch64 && last != null;
+
+      extraNativeBuildInputsPostStrip = lib.optionals doSign [
+        last.pkgs.darwin.autoSignDarwinBinariesHook
+      ];
+
       mkExtraBuildCommands = cc: ''
         rsrc="$out/resource-root"
         mkdir "$rsrc"
         ln -s "${cc}/lib/clang/${cc.version}/include" "$rsrc"
-        ln -s "${last.pkgs.llvmPackages_7.compiler-rt.out}/lib" "$rsrc/lib"
+        ln -s "${last.pkgs."${finalLlvmPackages}".compiler-rt.out}/lib" "$rsrc/lib"
         echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
       '';
 
@@ -108,18 +117,19 @@ in rec {
 
           nativeTools  = false;
           nativeLibc   = false;
-          inherit buildPackages libcxx;
+          inherit buildPackages;
+          libcxx = (x: builtins.trace "wrapping libcxx=${x}" x) libcxx;
           inherit (last.pkgs) coreutils gnugrep;
           bintools     = last.pkgs.darwin.binutils;
           libc         = last.pkgs.darwin.Libsystem;
           isClang      = true;
-          cc           = last.pkgs.llvmPackages_7.clang-unwrapped;
+          cc           = (x: builtins.trace "wrapping CC=${x}" x) last.pkgs."${finalLlvmPackages}".clang-unwrapped;
         }; in args // (overrides args));
 
       cc = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         extraPackages = [
-          last.pkgs.llvmPackages_7.libcxxabi
-          last.pkgs.llvmPackages_7.compiler-rt
+          last.pkgs."${finalLlvmPackages}".libcxxabi
+          last.pkgs."${finalLlvmPackages}".compiler-rt
         ];
         extraBuildCommands = mkExtraBuildCommands cc;
       });
@@ -127,11 +137,11 @@ in rec {
       ccNoLibcxx = if last == null then "/dev/null" else mkCC ({ cc, ... }: {
         libcxx = null;
         extraPackages = [
-          last.pkgs.llvmPackages_7.compiler-rt
+          last.pkgs."${finalLlvmPackages}".compiler-rt
         ];
         extraBuildCommands = ''
           echo "-rtlib=compiler-rt" >> $out/nix-support/cc-cflags
-          echo "-B${last.pkgs.llvmPackages_7.compiler-rt}/lib" >> $out/nix-support/cc-cflags
+          echo "-B${last.pkgs."${finalLlvmPackages}".compiler-rt}/lib" >> $out/nix-support/cc-cflags
           echo "-nostdlib++" >> $out/nix-support/cc-cflags
         '' + mkExtraBuildCommands cc;
       });
@@ -139,10 +149,12 @@ in rec {
       thisStdenv = import ../generic {
         name = "${name}-stdenv-darwin";
 
-        inherit config shell extraNativeBuildInputs extraBuildInputs;
+        # Always sign on aarch64
+
+        inherit config shell extraNativeBuildInputs extraBuildInputs extraNativeBuildInputsPostStrip;
         allowedRequisites = if allowedRequisites == null then null else allowedRequisites ++ [
           cc.expand-response-params cc.bintools
-        ];
+        ] ++ extraNativeBuildInputsPostStrip ++ lib.optionals doSign [ last.pkgs.darwin.sigtool ];
 
         buildPlatform = localSystem;
         hostPlatform = localSystem;
@@ -190,15 +202,25 @@ in rec {
       gnugrep   = { name = "bootstrap-stage0-gnugrep";   outPath = bootstrapTools; };
 
       darwin = super.darwin // {
-        Libsystem = stdenv.mkDerivation {
-          name = "bootstrap-stage0-Libsystem";
-          buildCommand = ''
-            mkdir -p $out
-            ln -s ${bootstrapTools}/lib $out/lib
-            ln -s ${bootstrapTools}/include-Libsystem $out/include
+        dyld = bootstrapTools;
+
+        sigtool = stdenv.mkDerivation {
+          name = "bootstrap-stage0-sigtool";
+          phases = [ "installPhase" ];
+          installPhase = ''
+            mkdir -p $out/bin
+            ln -s ${bootstrapTools}/bin/gensig $out/bin
           '';
         };
-        dyld = bootstrapTools;
+
+        print-reexports = stdenv.mkDerivation {
+          name = "bootstrap-stage0-print-reexports";
+          phases = [ "installPhase" ];
+          installPhase = ''
+            mkdir -p $out/bin
+            ln -s ${bootstrapTools}/bin/print-reexports $out/bin
+          '';
+        };
 
         binutils = lib.makeOverridable (import ../../build-support/bintools-wrapper) {
           shell = "${bootstrapTools}/bin/bash";
@@ -210,13 +232,23 @@ in rec {
           libc         = self.pkgs.darwin.Libsystem;
           bintools     = { name = "bootstrap-stage0-binutils"; outPath = bootstrapTools; };
         };
+      } // lib.optionalAttrs (! pureLibsystem) {
+        Libsystem = stdenv.mkDerivation {
+          name = "bootstrap-stage0-Libsystem";
+          buildCommand = ''
+            mkdir -p $out
+            ln -s ${bootstrapTools}/lib $out/lib
+            ln -s ${bootstrapTools}/include-Libsystem $out/include
+          '';
+
+        };
       };
 
-      llvmPackages_7 = {
+      "${finalLlvmPackages}" = {
         clang-unwrapped = {
           name = "bootstrap-stage0-clang";
           outPath = bootstrapTools;
-          version = bootstrapClangVersion;
+          version = bootstrapLlvmVersion;
         };
 
         libcxx = stdenv.mkDerivation {
@@ -267,12 +299,12 @@ in rec {
 
       ninja = super.ninja.override { buildDocs = false; };
 
-      llvmPackages_7 = super.llvmPackages_7 // (let
-        tools = super.llvmPackages_7.tools.extend (_: _: {
-          inherit (llvmPackages_7) clang-unwrapped;
+      "${finalLlvmPackages}" = super."${finalLlvmPackages}" // (let
+        tools = super."${finalLlvmPackages}".tools.extend (_: _: {
+          inherit (pkgs."${finalLlvmPackages}") clang-unwrapped;
         });
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
-          inherit (llvmPackages_7) compiler-rt libcxx libcxxabi;
+        libraries = super."${finalLlvmPackages}".libraries.extend (_: _: {
+          inherit (pkgs."${finalLlvmPackages}") compiler-rt libcxx libcxxabi;
         });
       in { inherit tools libraries; } // tools // libraries);
 
@@ -286,11 +318,11 @@ in rec {
     extraPreHook = "export NIX_CFLAGS_COMPILE+=\" -F${bootstrapTools}/Library/Frameworks\"";
     extraNativeBuildInputs = [];
     extraBuildInputs = [ ];
-    libcxx = pkgs.libcxx;
+    libcxx = pkgs."${finalLlvmPackages}".libcxx;
 
     allowedRequisites =
       [ bootstrapTools ] ++
-      (with pkgs; [ libcxx libcxxabi llvmPackages_7.compiler-rt ]) ++
+      (with pkgs."${finalLlvmPackages}"; [ libcxx libcxxabi compiler-rt ]) ++
       (with pkgs.darwin; [ Libsystem ]);
 
     overrides = persistent;
@@ -305,17 +337,17 @@ in rec {
         findfreetype libssh curl cmake autoconf automake libtool ed cpio coreutils
         libssh2 nghttp2 libkrb5 ninja;
 
-      llvmPackages_7 = super.llvmPackages_7 // (let
-        tools = super.llvmPackages_7.tools.extend (_: _: {
-          inherit (llvmPackages_7) clang-unwrapped;
+      "${finalLlvmPackages}" = super."${finalLlvmPackages}" // (let
+        tools = super."${finalLlvmPackages}".tools.extend (_: _: {
+          inherit (pkgs."${finalLlvmPackages}") clang-unwrapped;
         });
-        libraries = super.llvmPackages_7.libraries.extend (_: libSuper: {
-          inherit (llvmPackages_7) compiler-rt;
+        libraries = super."${finalLlvmPackages}".libraries.extend (_: libSuper: {
+          inherit (pkgs."${finalLlvmPackages}") compiler-rt;
           libcxx = libSuper.libcxx.override {
             stdenv = overrideCC self.stdenv self.ccNoLibcxx;
           };
           libcxxabi = libSuper.libcxxabi.override {
-            stdenv = overrideCC self.stdenv self.ccNoLibcxx;
+            stdenv = (x: builtins.trace "PASSING stdenv=${toString x}" x) (overrideCC self.stdenv self.ccNoLibcxx);
             standalone = true;
           };
         });
@@ -334,14 +366,17 @@ in rec {
 
     extraNativeBuildInputs = [ pkgs.xz ];
     extraBuildInputs = [ pkgs.darwin.CF ];
-    libcxx = pkgs.libcxx;
+    libcxx = pkgs."${finalLlvmPackages}".libcxx;
 
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs; [
-        xz.bin xz.out libcxx libcxxabi llvmPackages_7.compiler-rt
+        xz.bin xz.out 
         zlib libxml2.out curl.out openssl.out libssh2.out
         nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
+      ]) ++
+      (with pkgs."${finalLlvmPackages}"; [
+       libcxx libcxxabi compiler-rt
       ]) ++
       (with pkgs.darwin; [ dyld Libsystem CF ICU locale ]);
 
@@ -360,9 +395,9 @@ in rec {
       # Avoid pulling in a full python and its extra dependencies for the llvm/clang builds.
       libxml2 = super.libxml2.override { pythonSupport = false; };
 
-      llvmPackages_7 = super.llvmPackages_7 // (let
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
-          inherit (llvmPackages_7) libcxx libcxxabi;
+      "${finalLlvmPackages}" = super."${finalLlvmPackages}" // (let
+        libraries = super."${finalLlvmPackages}".libraries.extend (_: _: {
+          inherit (pkgs."${finalLlvmPackages}") libcxx libcxxabi;
         });
       in { inherit libraries; } // libraries);
 
@@ -381,7 +416,7 @@ in rec {
     # patches our shebangs back to point at bootstrapTools. This makes sure bash comes first.
     extraNativeBuildInputs = with pkgs; [ xz ];
     extraBuildInputs = [ pkgs.darwin.CF pkgs.bash ];
-    libcxx = pkgs.libcxx;
+    libcxx = pkgs."${finalLlvmPackages}".libcxx;
 
     extraPreHook = ''
       export PATH=${pkgs.bash}/bin:$PATH
@@ -391,9 +426,12 @@ in rec {
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs; [
-        xz.bin xz.out bash libcxx libcxxabi llvmPackages_7.compiler-rt
+        xz.bin xz.out bash
         zlib libxml2.out curl.out openssl.out libssh2.out
         nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
+      ]) ++
+      (with pkgs."${finalLlvmPackages}"; [
+       libcxx libcxxabi compiler-rt
       ]) ++
       (with pkgs.darwin; [ dyld ICU Libsystem locale ]);
 
@@ -416,13 +454,13 @@ in rec {
         ];
       });
 
-      llvmPackages_7 = super.llvmPackages_7 // (let
-        tools = super.llvmPackages_7.tools.extend (llvmSelf: _: {
-          clang-unwrapped = llvmPackages_7.clang-unwrapped.override { llvm = llvmSelf.llvm; };
-          llvm = llvmPackages_7.llvm.override { inherit libxml2; };
+      "${finalLlvmPackages}" = super."${finalLlvmPackages}" // (let
+        tools = super."${finalLlvmPackages}".tools.extend (llvmSelf: _: {
+          clang-unwrapped = pkgs."${finalLlvmPackages}".clang-unwrapped.override { llvm = llvmSelf.llvm; };
+          llvm = pkgs."${finalLlvmPackages}".llvm.override { inherit libxml2; };
         });
-        libraries = super.llvmPackages_7.libraries.extend (llvmSelf: _: {
-          inherit (llvmPackages_7) libcxx libcxxabi compiler-rt;
+        libraries = super."${finalLlvmPackages}".libraries.extend (llvmSelf: _: {
+          inherit (pkgs."${finalLlvmPackages}") libcxx libcxxabi compiler-rt;
         });
       in { inherit tools libraries; } // tools // libraries);
 
@@ -439,7 +477,7 @@ in rec {
     shell = "${pkgs.bash}/bin/bash";
     extraNativeBuildInputs = with pkgs; [ xz ];
     extraBuildInputs = [ pkgs.darwin.CF pkgs.bash ];
-    libcxx = pkgs.libcxx;
+    libcxx = pkgs."${finalLlvmPackages}".libcxx;
 
     extraPreHook = ''
       export PATH_LOCALE=${pkgs.darwin.locale}/share/locale
@@ -464,12 +502,12 @@ in rec {
       inherit llvm;
 
       # Need to get rid of these when cross-compiling.
-      llvmPackages_7 = super.llvmPackages_7 // (let
-        tools = super.llvmPackages_7.tools.extend (_: super: {
-          inherit (llvmPackages_7) llvm clang-unwrapped;
+      "${finalLlvmPackages}" = super."${finalLlvmPackages}" // (let
+        tools = super."${finalLlvmPackages}".tools.extend (_: super: {
+          inherit (pkgs."${finalLlvmPackages}") llvm clang-unwrapped;
         });
-        libraries = super.llvmPackages_7.libraries.extend (_: _: {
-          inherit (llvmPackages_7) compiler-rt libcxx libcxxabi;
+        libraries = super."${finalLlvmPackages}".libraries.extend (_: _: {
+          inherit (pkgs."${finalLlvmPackages}") compiler-rt libcxx libcxxabi;
         });
       in { inherit tools libraries; } // tools // libraries);
 
@@ -496,9 +534,7 @@ in rec {
     initialPath = import ../common-path.nix { inherit pkgs; };
     shell       = "${pkgs.bash}/bin/bash";
 
-    cc = pkgs.llvmPackages.libcxxClang.override {
-      cc = pkgs.llvmPackages.clang-unwrapped;
-    };
+    cc = pkgs."${finalLlvmPackages}".libcxxClang;
 
     extraNativeBuildInputs = [];
     extraBuildInputs = [ pkgs.darwin.CF ];
@@ -510,15 +546,21 @@ in rec {
     };
 
     allowedRequisites = (with pkgs; [
-      xz.out xz.bin libcxx libcxxabi gmp.out gnumake findutils bzip2.out
-      bzip2.bin llvmPackages.llvm llvmPackages.llvm.lib llvmPackages.compiler-rt llvmPackages.compiler-rt.dev
+      xz.out xz.bin gmp.out gnumake findutils bzip2.out
+      bzip2.bin 
       zlib.out zlib.dev libffi.out coreutils ed diffutils gnutar
       gzip ncurses.out ncurses.dev ncurses.man gnused bash gawk
-      gnugrep llvmPackages.clang-unwrapped llvmPackages.clang-unwrapped.lib patch pcre.out gettext
+      gnugrep patch pcre.out gettext
       binutils.bintools darwin.binutils darwin.binutils.bintools
       curl.out openssl.out libssh2.out nghttp2.lib libkrb5
       cc.expand-response-params libxml2.out
-    ]) ++ (with pkgs.darwin; [
+    ])
+    ++ (with pkgs."${finalLlvmPackages}"; [
+      libcxx libcxxabi
+      llvm llvm.lib compiler-rt compiler-rt.dev
+      clang-unwrapped clang-unwrapped.lib 
+    ])
+    ++ (with pkgs.darwin; [
       dyld Libsystem CF cctools ICU libiconv locale libtapi
     ]);
 

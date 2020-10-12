@@ -230,7 +230,7 @@ let
           then overrideCC stdenv buildLlvmTools.lldClangNoLibcxx
         else null;
     in callPackage ./libc++abi.nix ({} //
-      (stdenv.lib.optionalAttrs (stdenv != null) {
+      (stdenv.lib.optionalAttrs (stdenv_ != null) {
         stdenv = stdenv_;
         libunwind = libraries.libunwind;
       }));
