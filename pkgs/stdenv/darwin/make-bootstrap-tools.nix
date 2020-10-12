@@ -27,6 +27,7 @@ builtins.trace (
 
 let
   llvmPackages = pkgs."${llvmPackageSet}";
+  storePrefixLen = builtins.stringLength builtins.storeDir;
 in rec {
   coreutils_ = coreutils.override (args: {
     # We want coreutils without ACL support.
@@ -94,6 +95,7 @@ in rec {
 
       # Copy what we need of clang
       cp -d ${llvmPackages.clang-unwrapped}/bin/clang* $out/bin
+      cp -d ${llvmPackages.clang-unwrapped.lib}/lib/* $out/lib
 
       cp -rL ${llvmPackages.clang-unwrapped}/lib/clang $out/lib
 
@@ -127,8 +129,11 @@ in rec {
 
       rpathify() {
         local libs=$(${stdenv.cc.targetPrefix}otool -L "$1" | tail -n +2 | grep -o "$NIX_STORE.*-\S*") || true
+        local newlib
         for lib in $libs; do
-          ${stdenv.cc.targetPrefix}install_name_tool -change $lib "@rpath/$(basename $lib)" "$1"
+          newlib=''${lib:${toString (storePrefixLen + 1)}}
+          newlib=''${newlib#*/}
+          ${stdenv.cc.targetPrefix}install_name_tool -change $lib "@rpath/$newlib" "$1"
         done
       }
 
@@ -144,6 +149,13 @@ in rec {
         if test -x "$i" -a ! -L "$i"; then
           echo "Adding rpath to $i"
           rpathify $i
+        fi
+      done
+
+      for i in $out/bin/*; do
+        if test -x "$i" -a ! -L "$i"; then
+          echo "Adding @executable_path to rpath in $i"
+          ${stdenv.cc.targetPrefix}install_name_tool -add_rpath '@executable_path/..' $i
         fi
       done
 
