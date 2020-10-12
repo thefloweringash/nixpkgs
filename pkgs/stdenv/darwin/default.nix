@@ -5,18 +5,33 @@
 # Minimum required macOS version, used both for compatibility as well as reproducability.
 , macosVersionMin ? "10.12"
 # Allow passing in bootstrap files directly so we can test the stdenv bootstrap process when changing the bootstrap tools
-, bootstrapFiles ? let
-  fetch = { file, sha256, executable ? true }: import <nix/fetchurl.nix> {
-    url = "http://tarballs.nixos.org/stdenv-darwin/x86_64/5ab5783e4f46c373c6de84deac9ad59b608bb2e6/${file}";
-    inherit (localSystem) system;
-    inherit sha256 executable;
-  }; in {
-    sh      = fetch { file = "sh";    sha256 = "sha256-nbb4XEk3go7ttiWrQyKQMLzPr+qUnwnHkWMtVCZsMCs="; };
-    bzip2   = fetch { file = "bzip2"; sha256 = "sha256-ybnA+JWrKhXSfn20+GVKXkHFTp2Zt79hat8hAVmsUOc="; };
-    mkdir   = fetch { file = "mkdir"; sha256 = "sha256-nmvMxmfcY41/60Z/E8L9u0vgePW5l30Dqw1z+Nr02Hk="; };
-    cpio    = fetch { file = "cpio";  sha256 = "sha256-cB36rN3NLj19Tk37Kc5bodMFMO+mCpEQkKKo0AEMkaU="; };
-    tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "sha256-kh2vKmjCr/HvR06czZbxUxV5KDRxSF27M6nN3cyofRI="; executable = false; };
-  }
+, bootstrapFiles ?
+  if localSystem.isAarch64 then
+    let
+      fetch = { file, sha256, executable ? true }: import <nix/fetchurl.nix> {
+        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/c36723cebc9ded93aa709409837fdd8217d13dfb/${file}";
+        inherit (localSystem) system;
+        inherit sha256 executable;
+      }; in {
+        sh      = fetch { file = "sh";    sha256 = "0000000000000000000000000000000000000000000000000000"; };
+        bzip2   = fetch { file = "bzip2"; sha256 = "0000000000000000000000000000000000000000000000000000"; };
+        mkdir   = fetch { file = "mkdir"; sha256 = "0000000000000000000000000000000000000000000000000000"; };
+        cpio    = fetch { file = "cpio";  sha256 = "0000000000000000000000000000000000000000000000000000"; };
+        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "0000000000000000000000000000000000000000000000000000"; executable = false; };
+      }
+  else
+    let
+      fetch = { file, sha256, executable ? true }: import <nix/fetchurl.nix> {
+        url = "http://tarballs.nixos.org/stdenv-darwin/x86_64/5ab5783e4f46c373c6de84deac9ad59b608bb2e6/${file}";
+        inherit (localSystem) system;
+        inherit sha256 executable;
+      }; in {
+        sh      = fetch { file = "sh";    sha256 = "sha256-nbb4XEk3go7ttiWrQyKQMLzPr+qUnwnHkWMtVCZsMCs="; };
+        bzip2   = fetch { file = "bzip2"; sha256 = "sha256-ybnA+JWrKhXSfn20+GVKXkHFTp2Zt79hat8hAVmsUOc="; };
+        mkdir   = fetch { file = "mkdir"; sha256 = "sha256-nmvMxmfcY41/60Z/E8L9u0vgePW5l30Dqw1z+Nr02Hk="; };
+        cpio    = fetch { file = "cpio";  sha256 = "sha256-cB36rN3NLj19Tk37Kc5bodMFMO+mCpEQkKKo0AEMkaU="; };
+        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "sha256-kh2vKmjCr/HvR06czZbxUxV5KDRxSF27M6nN3cyofRI="; executable = false; };
+      }
 }:
 
 assert crossSystem == localSystem;
@@ -24,7 +39,11 @@ assert crossSystem == localSystem;
 let
   inherit (localSystem) system platform;
 
-  bootstrapClangVersion = "7.1.0";
+  # Bootstrap version needs to be known to reference headers included in the bootstrap tools
+  bootstrapClangVersion = if localSystem.isAarch64 then "10.0.1" else "7.1.0";
+
+  # final toolchain is injected into llvmPackages_${finalClangVersion}
+  finalClangVersion = if localSystem.isAarch64 then "10" else "7";
 
   commonImpureHostDeps = [
     "/bin/sh"
@@ -51,7 +70,7 @@ in rec {
 
     name    = "bootstrap-tools";
     builder = bootstrapFiles.sh; # Not a filename! Attribute 'sh' on bootstrapFiles
-    args    = [ ./unpack-bootstrap-tools.sh ];
+    args    = if localSystem.isAarch64 then [ ./unpack-bootstrap-tools-pure.sh ] else [ ./unpack-bootstrap-tools.sh ];
 
     inherit (bootstrapFiles) mkdir bzip2 cpio tarball;
     reexportedLibrariesFile =
