@@ -55,8 +55,8 @@ in
       ## else pkgs.stdenv.cc.libc
     );
     bintools = darwin.binutils-unwrapped;
-    extraPackages = [ darwin.sigtool ];
-    extraBuildCommands = ''
+    extraPackages = lib.optionals stdenv.targetPlatform.isAarch64 [ darwin.sigtool ];
+    extraBuildCommands = lib.optionalString stdenv.targetPlatform.isAarch64 ''
       echo 'source ${darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
     '';
   };
