@@ -55,8 +55,10 @@ in
       ## else pkgs.stdenv.cc.libc
     );
     bintools = darwin.binutils-unwrapped;
-    extraPackages = lib.optionals stdenv.targetPlatform.isAarch64 [ darwin.sigtool ];
-    extraBuildCommands = lib.optionalString stdenv.targetPlatform.isAarch64 ''
+    # TODO: make these only stdenv.targetPlatform.isAarch64
+    # but without infinite recursion
+    extraPackages = lib.optionals (stdenv.buildPlatform == stdenv.targetPlatform && stdenv.targetPlatform.isAarch64) [ darwin.sigtool ];
+    extraBuildCommands = lib.optionalString (stdenv.buildPlatform == stdenv.targetPlatform && stdenv.targetPlatform.isAarch64) ''
       echo 'source ${darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
     '';
   };
@@ -78,7 +80,7 @@ in
   sigtool = callPackage ../os-specific/darwin/sigtool { };
 
   autoSignDarwinBinariesHook = makeSetupHook {
-    substitutions = { inherit (darwin.binutils) targetPrefix; };
+    substitutions = { inherit (pkgs.binutils-unwrapped) targetPrefix; };
     deps = [ darwin.sigtool ];
   } ../os-specific/darwin/sigtool/setup-hook.sh;
 
