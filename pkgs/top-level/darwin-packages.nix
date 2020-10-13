@@ -101,7 +101,9 @@ in
         mv -f "$path.unsigned" "$path"
       }
 
-      signDarwinBinary "$linkerOutput"
+      if gensig --file "$linkerOutput" check-requires-signature; then
+        signDarwinBinary "$linkerOutput"
+      fi
     '';
   };
 
