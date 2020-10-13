@@ -20,13 +20,13 @@ assert (!stdenv.hostPlatform.isDarwin) -> maloader != null;
 let
   baseParams = rec {
     name = "${targetPrefix}cctools-port";
-    version = "927.0.2";
+    version = "949.0.1"; # last version before the author added signing based on saurik's ldid
 
     src = fetchFromGitHub {
       owner  = "tpoechtrager";
       repo   = "cctools-port";
-      rev    = "8239a5211bcf07d6b9d359782e1a889ec1d7cce5";
-      sha256 = "0h8b1my0wf1jyjq63wbiqkl2clgxsf87f6i4fjhqs431fzlq8sac";
+      rev    = "c4805a2a4f8a80ecad791476156fe396692b76cd";
+      sha256 = "0000000000000000000000000000000000000000000000000000";
     };
 
     outputs = [ "out" "dev" "man" ];
