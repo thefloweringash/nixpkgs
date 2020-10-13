@@ -97,10 +97,7 @@ in rec {
       };
 
       doSign = localSystem.isAarch64 && last != null;
-
-      extraNativeBuildInputsPostStrip = lib.optionals doSign [
-        last.pkgs.darwin.autoSignDarwinBinariesHook
-      ];
+      doUpdateAutoTools = localSystem.isAarch64 && last != null;
 
       mkExtraBuildCommands = cc: ''
         rsrc="$out/resource-root"
@@ -149,20 +146,25 @@ in rec {
       thisStdenv = import ../generic {
         name = "${name}-stdenv-darwin";
 
-        # Always sign on aarch64
+        inherit config shell extraBuildInputs;
 
-        inherit config shell extraBuildInputs extraNativeBuildInputsPostStrip;
+        extraNativeBuildInputsPostStrip = lib.optionals doSign [
+          last.pkgs.darwin.autoSignDarwinBinariesHook
+        ];
 
-        extraNativeBuildInputs = extraNativeBuildInputs ++ lib.optionals (last != null && !localSystem.isx86) [
+        extraNativeBuildInputs = extraNativeBuildInputs ++ lib.optionals doUpdateAutoTools [
           last.pkgs.updateAutotoolsGnuConfigScriptsHook last.pkgs.gnu-config
         ];
 
         allowedRequisites = if allowedRequisites == null then null else allowedRequisites ++ [
           cc.expand-response-params cc.bintools
-          last.pkgs.darwin.postLinkSignHook
-        ] ++ lib.optionals (! localSystem.isx86) [
+        ] ++ lib.optionals doUpdateAutoTools [
           last.pkgs.updateAutotoolsGnuConfigScriptsHook last.pkgs.gnu-config
-        ] ++ extraNativeBuildInputsPostStrip ++ lib.optionals doSign [ last.pkgs.darwin.sigtool ];
+        ] ++ lib.optionals doSign [
+          last.pkgs.darwin.autoSignDarwinBinariesHook
+          last.pkgs.darwin.postLinkSignHook
+          last.pkgs.darwin.sigtool
+        ];
 
         buildPlatform = localSystem;
         hostPlatform = localSystem;
@@ -239,8 +241,8 @@ in rec {
           inherit (self) buildPackages coreutils gnugrep;
           libc         = self.pkgs.darwin.Libsystem;
           bintools     = { name = "bootstrap-stage0-binutils"; outPath = bootstrapTools; };
-          extraPackages = [ self.pkgs.darwin.sigtool ];
-          extraBuildCommands = ''
+          extraPackages = lib.optional localSystem.isAarch64 [ self.pkgs.darwin.sigtool ];
+          extraBuildCommands = lib.optionalString localSystem.isAarch64 ''
             echo 'source ${self.pkgs.darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
           '';
         };
