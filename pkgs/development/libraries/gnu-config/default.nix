@@ -20,6 +20,9 @@ in stdenv.mkDerivation {
     mkdir -p $out
     cp ${configGuess} $out/config.guess
     cp ${configSub} $out/config.sub
+
+    cd $out
+    patch -p1 < ${./apple-silicon.patch}
   '';
 
   meta = with stdenv.lib; {

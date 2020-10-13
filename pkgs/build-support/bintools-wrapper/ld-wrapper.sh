@@ -83,6 +83,8 @@ declare -a libDirs
 declare -A libs
 declare -i relocatable=0 link32=0
 
+linkerOutput="a.out"
+
 if
     [ "$NIX_DONT_SET_RPATH_@suffixSalt@" != 1 ] \
         || [ "$NIX_SET_BUILD_ID_@suffixSalt@" = 1 ] \
@@ -133,6 +135,25 @@ then
         prev="$p"
     done
 fi
+
+# TODO: does this belong here?
+# Determine linkerOutput
+prev=
+for p in \
+    ${extraBefore+"${extraBefore[@]}"} \
+    ${params+"${params[@]}"} \
+    ${extraAfter+"${extraAfter[@]}"}
+do
+    case "$prev" in
+        -o)
+            # Informational for post-link-hook
+            linkerOutput="$p"
+            ;;
+        *)
+            ;;
+    esac
+    prev="$p"
+done
 
 if [ -e "@out@/nix-support/dynamic-linker-m32" ] && (( "$link32" )); then
     # We have an alternate 32-bit linker and we're producing a 32-bit ELF, let's
@@ -204,7 +225,11 @@ fi
 
 PATH="$path_backup"
 # Old bash workaround, see above.
-exec @prog@ \
+@prog@ \
     ${extraBefore+"${extraBefore[@]}"} \
     ${params+"${params[@]}"} \
     ${extraAfter+"${extraAfter[@]}"}
+
+if [ -e "@out@/nix-support/post-link-hook" ]; then
+    source @out@/nix-support/post-link-hook
+fi

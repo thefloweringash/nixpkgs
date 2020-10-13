@@ -151,9 +151,17 @@ in rec {
 
         # Always sign on aarch64
 
-        inherit config shell extraNativeBuildInputs extraBuildInputs extraNativeBuildInputsPostStrip;
+        inherit config shell extraBuildInputs extraNativeBuildInputsPostStrip;
+
+        extraNativeBuildInputs = extraNativeBuildInputs ++ lib.optionals (last != null && !localSystem.isx86) [
+          last.pkgs.updateAutotoolsGnuConfigScriptsHook last.pkgs.gnu-config
+        ];
+
         allowedRequisites = if allowedRequisites == null then null else allowedRequisites ++ [
           cc.expand-response-params cc.bintools
+          last.pkgs.darwin.postLinkSignHook
+        ] ++ lib.optionals (! localSystem.isx86) [
+          last.pkgs.updateAutotoolsGnuConfigScriptsHook last.pkgs.gnu-config
         ] ++ extraNativeBuildInputsPostStrip ++ lib.optionals doSign [ last.pkgs.darwin.sigtool ];
 
         buildPlatform = localSystem;
@@ -231,6 +239,10 @@ in rec {
           inherit (self) buildPackages coreutils gnugrep;
           libc         = self.pkgs.darwin.Libsystem;
           bintools     = { name = "bootstrap-stage0-binutils"; outPath = bootstrapTools; };
+          extraPackages = [ self.pkgs.darwin.sigtool ];
+          extraBuildCommands = ''
+            echo 'source ${self.pkgs.darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
+          '';
         };
       } // lib.optionalAttrs (! pureLibsystem) {
         Libsystem = stdenv.mkDerivation {
