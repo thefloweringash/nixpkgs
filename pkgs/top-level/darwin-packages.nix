@@ -1,4 +1,4 @@
-{ lib, buildPackages, pkgs, targetPackages
+{ lib, buildPackages, pkgs, targetPackages, writeTextFile
 , darwin, stdenv, callPackage, callPackages, newScope
 , makeSetupHook, CFCrossStdenv
 }:
@@ -55,6 +55,10 @@ in
       ## else pkgs.stdenv.cc.libc
     );
     bintools = darwin.binutils-unwrapped;
+    extraPackages = [ darwin.sigtool ];
+    extraBuildCommands = ''
+      echo 'source ${darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
+    '';
   };
 
   cctools = callPackage ../os-specific/darwin/cctools/port.nix {
@@ -77,6 +81,29 @@ in
     substitutions = { inherit (darwin.binutils) targetPrefix; };
     deps = [ darwin.sigtool ];
   } ../os-specific/darwin/sigtool/setup-hook.sh;
+
+  # TODO: overlaps a lot with the sigtool setup hook
+  postLinkSignHook = writeTextFile {
+    name = "post-link-sign-hook";
+    executable = true;
+    text = ''
+      signDarwinBinary() {
+        local path="$1"
+        local sigsize arch
+
+        arch=$(gensig --file "$path" show-arch)
+
+        sigsize=$(gensig --file "$path" size)
+        sigsize=$(( ((sigsize + 15) / 16) * 16 + 1024 ))
+
+        ${darwin.binutils.targetPrefix}codesign_allocate -i "$path" -a "$arch" "$sigsize" -o "$path.unsigned"
+        gensig --identifier "$(basename "$path")" --file "$path.unsigned" inject
+        mv -f "$path.unsigned" "$path"
+      }
+
+      signDarwinBinary "$linkerOutput"
+    '';
+  };
 
   checkReexportsHook = makeSetupHook {
     deps = [ pkgs.darwin.print-reexports ];
