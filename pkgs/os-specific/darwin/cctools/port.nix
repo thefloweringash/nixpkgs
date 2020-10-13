@@ -26,7 +26,7 @@ let
       owner  = "tpoechtrager";
       repo   = "cctools-port";
       rev    = "c4805a2a4f8a80ecad791476156fe396692b76cd";
-      sha256 = "0000000000000000000000000000000000000000000000000000";
+      sha256 = "14iis13zn2pvl2s88hhr0pzxk7vwd0vh6j8zgm0hsg88zwyhqr1q";
     };
 
     outputs = [ "out" "dev" "man" ];
