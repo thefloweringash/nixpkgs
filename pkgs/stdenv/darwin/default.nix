@@ -208,6 +208,13 @@ in rec {
 
   stage0 = stageFun 0 null {
     overrides = self: super: with stage0; {
+      # TODO: these are probably leaking framework dependencies into
+      # stdenvs
+      #
+      # TODO: split coreutils, gnugrep and binutils in the bootstrap
+      # tools archive, so that we can reconstruct them here without
+      # listing the names of all the binaries that make up each
+      # package.
       coreutils = { name = "bootstrap-stage0-coreutils"; outPath = bootstrapTools; };
       gnugrep   = { name = "bootstrap-stage0-gnugrep";   outPath = bootstrapTools; };
 
@@ -247,6 +254,14 @@ in rec {
           '';
         };
       } // lib.optionalAttrs (! pureLibsystem) {
+        CF = stdenv.mkDerivation {
+          name = "bootstrap-stage0-CF";
+          buildCommand = ''
+            mkdir $out/Library/Frameworks
+            ln -s ${bootstrapTools}/Library/Frameworks/CoreFoundation.framework $out/Library/Frameworks
+          '';
+        };
+
         Libsystem = stdenv.mkDerivation {
           name = "bootstrap-stage0-Libsystem";
           buildCommand = ''
@@ -331,13 +346,13 @@ in rec {
   in with prevStage; stageFun 1 prevStage {
     extraPreHook = "export NIX_CFLAGS_COMPILE+=\" -F${bootstrapTools}/Library/Frameworks\"";
     extraNativeBuildInputs = [];
-    extraBuildInputs = [ ];
+    extraBuildInputs = [ pkgs.darwin.CF ];
     libcxx = pkgs."${finalLlvmPackages}".libcxx;
 
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs."${finalLlvmPackages}"; [ libcxx libcxxabi compiler-rt ]) ++
-      (with pkgs.darwin; [ Libsystem ]);
+      (with pkgs.darwin; [ Libsystem CF ]);
 
     overrides = persistent;
   };
@@ -481,7 +496,8 @@ in rec {
       darwin = super.darwin // rec {
         inherit (darwin) dyld Libsystem libiconv locale darwin-stubs;
 
-        CF = super.darwin.CF.override {
+        # See useAppleSDKLibs in darwin-packages.nix
+        CF = if localSystem.isAarch64 then super.darwin.CF else super.darwin.CF.override {
           inherit libxml2;
           python3 = prevStage.python3;
         };
