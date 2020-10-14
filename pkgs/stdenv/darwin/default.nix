@@ -326,6 +326,11 @@ in rec {
     persistent = self: super: with prevStage; {
       cmake = super.cmakeMinimal;
 
+      cli11 = super.cli11.overrideAttrs(_: {
+        doCheck = false;
+        checkInputs = [];
+      });
+
       python3 = super.python3Minimal;
 
       ninja = super.ninja.override { buildDocs = false; };
