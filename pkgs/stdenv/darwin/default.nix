@@ -530,6 +530,7 @@ in rec {
   };
 
   stdenvDarwin = prevStage: let
+    doSign = localSystem.isAarch64;
     pkgs = prevStage;
     persistent = self: super: with prevStage; {
       inherit
@@ -580,7 +581,10 @@ in rec {
 
     cc = pkgs."${finalLlvmPackages}".libcxxClang;
 
-    extraNativeBuildInputs = [];
+    extraNativeBuildInputs = lib.optionals localSystem.isAarch64 [
+      pkgs.updateAutotoolsGnuConfigScriptsHook
+    ];
+
     extraBuildInputs = [ pkgs.darwin.CF ];
 
     extraAttrs = {
@@ -598,7 +602,11 @@ in rec {
       binutils.bintools darwin.binutils darwin.binutils.bintools
       curl.out openssl.out libssh2.out nghttp2.lib
       cc.expand-response-params libxml2.out
-    ] ++ lib.optional haveKRB5 libkrb5)
+    ] ++ lib.optional haveKRB5 libkrb5
+    ++ lib.optional doSign cryptopp
+    ++ lib.optionals localSystem.isAarch64 [
+      pkgs.updateAutotoolsGnuConfigScriptsHook pkgs.gnu-config
+    ])
     ++ (with pkgs."${finalLlvmPackages}"; [
       libcxx libcxxabi
       llvm llvm.lib compiler-rt compiler-rt.dev
@@ -606,7 +614,8 @@ in rec {
     ])
     ++ (with pkgs.darwin; [
       dyld Libsystem CF cctools ICU libiconv locale libtapi
-    ] ++ lib.optional useAppleSDKLibs objc4);
+    ] ++ lib.optional useAppleSDKLibs objc4
+    ++ lib.optionals doSign [ postLinkSignHook sigtool ]);
 
     overrides = lib.composeExtensions persistent (self: super: {
       darwin = super.darwin // {
