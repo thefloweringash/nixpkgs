@@ -31,36 +31,39 @@ stdenvNoCC.mkDerivation {
     for dir in $includeDirs; do
       from=${MacOSX-SDK}/usr/include/$dir
       if [ -e "$from" ]; then
-        cp -vr $from $out/include
+        cp -dr $from $out/include
       else
         echo "Header directory '$from' doesn't exist: skipping"
       fi
     done
 
-    cp -vr \
+    cp -d \
       ${MacOSX-SDK}/usr/include/*.h \
       $out/include
 
-    cp -vr \
+    cp -dr \
       ${MacOSX-SDK}/usr/lib/libSystem.* \
       ${MacOSX-SDK}/usr/lib/system \
       $out/lib
 
     # Extra libraries
-    for name in c dbm dl info m mx poll proc pthread rpcsvc util gcc_s.1; do
-      cp ${MacOSX-SDK}/usr/lib/lib$name.tbd $out/lib
+    for name in c dbm dl info m mx poll proc pthread rpcsvc util gcc_s.1 resolv; do
+      cp -d \
+        ${MacOSX-SDK}/usr/lib/lib$name.tbd \
+        ${MacOSX-SDK}/usr/lib/lib$name.*.tbd \
+        $out/lib
     done
 
     for f in $csu; do
       from=${MacOSX-SDK}/usr/lib/$f
       if [ -e "$from" ]; then
-        cp -vr $from $out/lib
+        cp -d $from $out/lib
       else
         echo "Csu file '$from' doesn't exist: skipping"
       fi
     done
 
-    find $out -name '*.tbd' | while read tbd; do
+    find $out -name '*.tbd' -type f | while read tbd; do
       substituteInPlace "$tbd" \
         --subst-var-by "Libsystem" "$out"
     done
