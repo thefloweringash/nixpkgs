@@ -29,6 +29,8 @@ let
         else appleSourcePackages
     ) Libsystem LibsystemCross libcharset libunwind objc4 ICU configd IOKit;
   };
+
+  llvmPackages = if stdenv.hostPlatform.isAarch64 then pkgs.llvmPackages_10 else pkgs.llvmPackages_7;
 in
 
 (appleSourcePackages // chooseLibs // {
@@ -44,7 +46,7 @@ in
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (darwin) cctools;
     inherit (pkgs) binutils-unwrapped;
-    inherit (pkgs.llvmPackages_7) llvm;
+    inherit (llvmPackages) llvm;
   };
 
   binutils = pkgs.wrapBintoolsWith {
