@@ -129,6 +129,8 @@ in rec {
 
       cp -d ${darwin.libtapi}/lib/libtapi* $out/lib
 
+      cp -rd ${pkgs.darwin.CF}/Library $out
+
       chmod -R u+w $out
 
       nuke-refs $out/bin/*
