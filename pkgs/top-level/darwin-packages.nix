@@ -15,12 +15,17 @@ let
     inherit (darwin) darwin-stubs print-reexports;
   };
 
+  # Pick an SDK
   apple_sdk = if stdenv.hostPlatform.isAarch64 then new_apple_sdk else old_apple_sdk;
+
+  # Pick the source of libraries: either Apple's open source releases, or the
+  # SDK.
+  useAppleSDKLibs = stdenv.hostPlatform.isAarch64;
 
   chooseLibs = {
     inherit (
-      if stdenv.hostPlatform.isAarch64
-        then new_apple_sdk
+      if useAppleSDKLibs
+        then apple_sdk
         else appleSourcePackages
     ) Libsystem LibsystemCross libcharset libunwind objc4 ICU configd IOKit;
   };
@@ -149,7 +154,10 @@ in
 
   CoreSymbolication = callPackage ../os-specific/darwin/CoreSymbolication { };
 
-  CF = callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
+  # TODO: make swift-corefoundation build with new_apple_sdk.Libsystem
+  CF = if useAppleSDKLibs
+    then apple_sdk.frameworks.CoreFoundation
+    else callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
 
   # this is really a pain
   # - we want our stdenv to contain CF.
