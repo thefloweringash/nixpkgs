@@ -42,7 +42,7 @@ let
   # Bootstrap version needs to be known to reference headers included in the bootstrap tools
   bootstrapLlvmVersion = if localSystem.isAarch64 then "10.0.1" else "7.1.0";
 
-  pureLibsystem = localSystem.isAarch64;
+  useAppleSDKLibs = localSystem.isAarch64;
 
   # final toolchain is injected into llvmPackages_${finalLlvmVersion}
   finalLlvmVersion = if localSystem.isAarch64 then "10" else "7";
@@ -253,7 +253,7 @@ in rec {
             echo 'source ${self.pkgs.darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
           '';
         };
-      } // lib.optionalAttrs (! pureLibsystem) {
+      } // lib.optionalAttrs (! useAppleSDKLibs) {
         CF = stdenv.mkDerivation {
           name = "bootstrap-stage0-CF";
           buildCommand = ''
@@ -352,7 +352,7 @@ in rec {
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs."${finalLlvmPackages}"; [ libcxx libcxxabi compiler-rt ]) ++
-      (with pkgs.darwin; [ Libsystem CF ]);
+      (with pkgs.darwin; [ Libsystem CF ] ++ lib.optional useAppleSDKLibs objc4);
 
     overrides = persistent;
   };
@@ -400,7 +400,7 @@ in rec {
     allowedRequisites =
       [ bootstrapTools ] ++
       (with pkgs; [
-        xz.bin xz.out 
+        xz.bin xz.out
         zlib libxml2.out curl.out openssl.out libssh2.out
         nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
       ]) ++
@@ -497,7 +497,7 @@ in rec {
         inherit (darwin) dyld Libsystem libiconv locale darwin-stubs;
 
         # See useAppleSDKLibs in darwin-packages.nix
-        CF = if localSystem.isAarch64 then super.darwin.CF else super.darwin.CF.override {
+        CF = if useAppleSDKLibs then super.darwin.CF else super.darwin.CF.override {
           inherit libxml2;
           python3 = prevStage.python3;
         };
@@ -577,7 +577,7 @@ in rec {
 
     allowedRequisites = (with pkgs; [
       xz.out xz.bin gmp.out gnumake findutils bzip2.out
-      bzip2.bin 
+      bzip2.bin
       zlib.out zlib.dev libffi.out coreutils ed diffutils gnutar
       gzip ncurses.out ncurses.dev ncurses.man gnused bash gawk
       gnugrep patch pcre.out gettext
@@ -588,7 +588,7 @@ in rec {
     ++ (with pkgs."${finalLlvmPackages}"; [
       libcxx libcxxabi
       llvm llvm.lib compiler-rt compiler-rt.dev
-      clang-unwrapped clang-unwrapped.lib 
+      clang-unwrapped clang-unwrapped.lib
     ])
     ++ (with pkgs.darwin; [
       dyld Libsystem CF cctools ICU libiconv locale libtapi
