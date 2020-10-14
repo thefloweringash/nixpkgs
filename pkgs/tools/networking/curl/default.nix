@@ -12,7 +12,9 @@
     # the "mig" tool does not configure its compiler correctly. This could be
     # fixed in mig, but losing gss support on cross compilation to darwin is
     # not worth the effort.
-    (stdenv.hostPlatform.isDarwin && (stdenv.buildPlatform != stdenv.hostPlatform))
+    (stdenv.hostPlatform.isDarwin && (stdenv.buildPlatform != stdenv.hostPlatform)) ||
+    # TODO: mig fails, and I don't want to investigate mig right now
+    (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64)
   ), libkrb5 ? null
 , c-aresSupport ? false, c-ares ? null
 , brotliSupport ? false, brotli ? null

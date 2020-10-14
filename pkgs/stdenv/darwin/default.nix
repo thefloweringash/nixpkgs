@@ -43,6 +43,7 @@ let
   bootstrapLlvmVersion = if localSystem.isAarch64 then "10.0.1" else "7.1.0";
 
   useAppleSDKLibs = localSystem.isAarch64;
+  haveKRB5 = localSystem.isx86_64;
 
   # final toolchain is injected into llvmPackages_${finalLlvmVersion}
   finalLlvmVersion = if localSystem.isAarch64 then "10" else "7";
@@ -164,6 +165,7 @@ in rec {
           last.pkgs.darwin.autoSignDarwinBinariesHook
           last.pkgs.darwin.postLinkSignHook
           last.pkgs.darwin.sigtool
+          last.pkgs.cryptopp
         ];
 
         buildPlatform = localSystem;
@@ -217,6 +219,9 @@ in rec {
       # package.
       coreutils = { name = "bootstrap-stage0-coreutils"; outPath = bootstrapTools; };
       gnugrep   = { name = "bootstrap-stage0-gnugrep";   outPath = bootstrapTools; };
+
+      # used by sigtool, included in allowedRequisites
+      cryptopp = { name = "bootstrap-stage0-cryptopp"; outPath = bootstrapTools; };
 
       darwin = super.darwin // {
         dyld = bootstrapTools;
@@ -340,6 +345,10 @@ in rec {
       darwin = super.darwin // {
         binutils = darwin.binutils.override {
           libc = self.darwin.Libsystem;
+          extraPackages = lib.optional localSystem.isAarch64 [ self.pkgs.darwin.sigtool ];
+          extraBuildCommands = lib.optionalString localSystem.isAarch64 ''
+            echo 'source ${self.pkgs.darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
+          '';
         };
       };
     };
@@ -364,7 +373,7 @@ in rec {
         libxml2 gettext sharutils gmp libarchive ncurses pkg-config libedit groff
         openssh sqlite sed serf openldap db cyrus-sasl expat apr-util subversion xz
         findfreetype libssh curl cmake autoconf automake libtool ed cpio coreutils
-        libssh2 nghttp2 libkrb5 ninja;
+        libssh2 nghttp2 libkrb5 ninja cryptopp;
 
       "${finalLlvmPackages}" = super."${finalLlvmPackages}" // (let
         tools = super."${finalLlvmPackages}".tools.extend (_: _: {
@@ -385,7 +394,7 @@ in rec {
       darwin = super.darwin // {
         inherit (darwin)
           binutils dyld Libsystem xnu configd ICU libdispatch libclosure
-          launchd CF darwin-stubs;
+          launchd CF objc4 darwin-stubs sigtool postLinkSignHook autoSignDarwinBinariesHook;
       };
     };
   in with prevStage; stageFun 2 prevStage {
@@ -402,12 +411,12 @@ in rec {
       (with pkgs; [
         xz.bin xz.out
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
-      ]) ++
+        nghttp2.lib coreutils gnugrep pcre.out gmp libiconv
+      ] ++ lib.optional haveKRB5 libkrb5) ++
       (with pkgs."${finalLlvmPackages}"; [
        libcxx libcxxabi compiler-rt
       ]) ++
-      (with pkgs.darwin; [ dyld Libsystem CF ICU locale ]);
+      (with pkgs.darwin; [ dyld Libsystem CF ICU locale ] ++ lib.optional useAppleSDKLibs objc4);
 
     overrides = persistent;
   };
@@ -419,7 +428,7 @@ in rec {
         gettext sharutils libarchive pkg-config groff bash subversion
         openssh sqlite sed serf openldap db cyrus-sasl expat apr-util
         findfreetype libssh curl cmake autoconf automake libtool cpio
-        libssh2 nghttp2 libkrb5 ninja;
+        libssh2 nghttp2 libkrb5 ninja cryptopp;
 
       # Avoid pulling in a full python and its extra dependencies for the llvm/clang builds.
       libxml2 = super.libxml2.override { pythonSupport = false; };
@@ -433,7 +442,7 @@ in rec {
       darwin = super.darwin // {
         inherit (darwin)
           dyld Libsystem xnu configd libdispatch libclosure launchd libiconv
-          locale darwin-stubs;
+          locale darwin-stubs sigtool;
       };
     };
   in with prevStage; stageFun 3 prevStage {
@@ -457,12 +466,12 @@ in rec {
       (with pkgs; [
         xz.bin xz.out bash
         zlib libxml2.out curl.out openssl.out libssh2.out
-        nghttp2.lib libkrb5 coreutils gnugrep pcre.out gmp libiconv
-      ]) ++
+        nghttp2.lib coreutils gnugrep pcre.out gmp libiconv
+      ] ++ lib.optional haveKRB5 libkrb5) ++
       (with pkgs."${finalLlvmPackages}"; [
        libcxx libcxxabi compiler-rt
       ]) ++
-      (with pkgs.darwin; [ dyld ICU Libsystem locale ]);
+      (with pkgs.darwin; [ dyld ICU Libsystem locale ] ++ lib.optional useAppleSDKLibs ((x: builtins.trace "allowing stage objc4=${x}" x) objc4));
 
     overrides = persistent;
   };
@@ -582,9 +591,9 @@ in rec {
       gzip ncurses.out ncurses.dev ncurses.man gnused bash gawk
       gnugrep patch pcre.out gettext
       binutils.bintools darwin.binutils darwin.binutils.bintools
-      curl.out openssl.out libssh2.out nghttp2.lib libkrb5
+      curl.out openssl.out libssh2.out nghttp2.lib
       cc.expand-response-params libxml2.out
-    ])
+    ] ++ lib.optional haveKRB5 libkrb5)
     ++ (with pkgs."${finalLlvmPackages}"; [
       libcxx libcxxabi
       llvm llvm.lib compiler-rt compiler-rt.dev
@@ -592,7 +601,7 @@ in rec {
     ])
     ++ (with pkgs.darwin; [
       dyld Libsystem CF cctools ICU libiconv locale libtapi
-    ]);
+    ] ++ lib.optional useAppleSDKLibs objc4);
 
     overrides = lib.composeExtensions persistent (self: super: {
       darwin = super.darwin // {
