@@ -585,6 +585,10 @@ in rec {
       pkgs.updateAutotoolsGnuConfigScriptsHook
     ];
 
+    extraNativeBuildInputsPostStrip = lib.optionals doSign [
+      pkgs.darwin.autoSignDarwinBinariesHook
+    ];
+
     extraBuildInputs = [ pkgs.darwin.CF ];
 
     extraAttrs = {
