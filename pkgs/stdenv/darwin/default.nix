@@ -329,6 +329,11 @@ in rec {
         useSharedLibraries = false;
       };
 
+      cli11 = super.cli11.overrideAttrs(_: {
+        doCheck = false;
+        checkInputs = [];
+      });
+
       python3 = super.python3Minimal;
 
       ninja = super.ninja.override { buildDocs = false; };
