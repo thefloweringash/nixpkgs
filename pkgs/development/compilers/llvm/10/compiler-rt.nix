@@ -7,6 +7,9 @@ let
   bareMetal = stdenv.hostPlatform.parsed.kernel.name == "none";
   inherit (stdenv.hostPlatform) isMusl;
 
+  # TODO: Doesn't build
+  appleSilicon = stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64;
+
   iosPlatformArch = { parsed, ... }: {
     armv7a  = "armv7";
     aarch64 = "arm64";
@@ -31,7 +34,7 @@ stdenv.mkDerivation rec {
     "-DCMAKE_ASM_COMPILER_TARGET=${stdenv.hostPlatform.config}"
   ] ++ stdenv.lib.optionals (darwinCross) [
     "-DCMAKE_LIPO=${stdenv.cc.targetPrefix}lipo"
-  ] ++ stdenv.lib.optionals (useLLVM || darwinCross || bareMetal || isMusl) [
+  ] ++ stdenv.lib.optionals (useLLVM || darwinCross || bareMetal || isMusl || appleSilicon) [
     "-DCOMPILER_RT_BUILD_SANITIZERS=OFF"
     "-DCOMPILER_RT_BUILD_XRAY=OFF"
     "-DCOMPILER_RT_BUILD_LIBFUZZER=OFF"

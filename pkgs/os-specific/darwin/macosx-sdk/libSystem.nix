@@ -41,6 +41,8 @@ stdenvNoCC.mkDerivation {
       ${MacOSX-SDK}/usr/include/*.h \
       $out/include
 
+    rm $out/include/tk*.h $out/include/tcl*.h
+
     cp -dr \
       ${MacOSX-SDK}/usr/lib/libSystem.* \
       ${MacOSX-SDK}/usr/lib/system \
