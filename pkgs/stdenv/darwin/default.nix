@@ -262,7 +262,7 @@ in rec {
         CF = stdenv.mkDerivation {
           name = "bootstrap-stage0-CF";
           buildCommand = ''
-            mkdir $out/Library/Frameworks
+            mkdir -p $out/Library/Frameworks
             ln -s ${bootstrapTools}/Library/Frameworks/CoreFoundation.framework $out/Library/Frameworks
           '';
         };
