@@ -5291,6 +5291,8 @@ in {
 
   pyobjc-core = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-core { });
 
+  pyobjc-framework-Accounts = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Accounts { });
+
   pyobjc-framework-Cocoa = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Cocoa { });
 
   pyobjc-framework-Collaboration = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Collaboration { });
