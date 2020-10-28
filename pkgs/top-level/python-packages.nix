@@ -5309,6 +5309,8 @@ in {
 
   pyobjc-framework-CoreServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreServices { });
 
+  pyobjc-framework-DictionaryServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-DictionaryServices { });
+
   pyobjc-framework-FinderSync = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FinderSync { });
 
   pyobjc-framework-FSEvents = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FSEvents { });
