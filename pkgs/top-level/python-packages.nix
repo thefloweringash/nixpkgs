@@ -5325,6 +5325,8 @@ in {
 
   pyobjc-framework-NetFS = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-NetFS { });
 
+  pyobjc-framework-NotificationCenter = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-NotificationCenter { });
+
   pyobjc-framework-Quartz = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Quartz { });
 
   pyobjc-framework-SearchKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SearchKit { });
