@@ -102,6 +102,8 @@ with frameworks; with libs; {
   SecurityInterface       = { inherit Security SecurityFoundation; };
   ServiceManagement       = { inherit Security; };
   Social                  = {};
+  # Available with SDK 10.15
+  Speech                  = {};
   SpriteKit               = {};
   StoreKit                = {};
   SyncServices            = {};
