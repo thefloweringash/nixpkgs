@@ -5293,6 +5293,8 @@ in {
 
   pyobjc-framework-Cocoa = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Cocoa { });
 
+  pyobjc-framework-Collaboration = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Collaboration { });
+
   pyocr = callPackage ../development/python-modules/pyocr {
     tesseract = pkgs.tesseract4;
   };
