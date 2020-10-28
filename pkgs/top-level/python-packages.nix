@@ -5297,6 +5297,8 @@ in {
 
   pyobjc-framework-ColorSync = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-ColorSync { });
 
+  pyobjc-framework-CoreData = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreData { });
+
   pyobjc-framework-CoreMedia = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreMedia { });
 
   pyobjc-framework-CoreServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreServices { });
