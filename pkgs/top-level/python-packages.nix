@@ -5333,6 +5333,8 @@ in {
 
   pyobjc-framework-ServiceManagement = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-ServiceManagement { });
 
+  pyobjc-framework-Speech = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Speech { });
+
   pyobjc-framework-SyncServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SyncServices { });
 
   pyobjc-framework-SystemExtensions = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SystemExtensions { });
