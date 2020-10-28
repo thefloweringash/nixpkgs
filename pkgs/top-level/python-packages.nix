@@ -5317,6 +5317,8 @@ in {
 
   pyobjc-framework-GameKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-GameKit { });
 
+  pyobjc-framework-libdispatch = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-libdispatch { });
+
   pyobjc-framework-MapKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-MapKit { });
 
   pyobjc-framework-MetalKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-MetalKit { });
