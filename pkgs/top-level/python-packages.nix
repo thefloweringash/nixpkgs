@@ -5347,6 +5347,8 @@ in {
 
   pyobjc-framework-ImageCaptureCore = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-ImageCaptureCore { });
 
+  pyobjc-framework-Intents = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Intents { });
+
   pyobjc-framework-IOSurface = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-IOSurface { });
 
   pyobjc-framework-libdispatch = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-libdispatch { });
