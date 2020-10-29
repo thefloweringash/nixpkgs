@@ -5321,6 +5321,8 @@ in {
 
   pyobjc-framework-DictionaryServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-DictionaryServices { });
 
+  pyobjc-framework-DiscRecording = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-DiscRecording { });
+
   pyobjc-framework-FinderSync = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FinderSync { });
 
   pyobjc-framework-FSEvents = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FSEvents { });
