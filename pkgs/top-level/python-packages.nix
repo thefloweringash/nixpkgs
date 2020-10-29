@@ -5357,6 +5357,8 @@ in {
 
   pyobjc-framework-Quartz = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Quartz { });
 
+  pyobjc-framework-SafariServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SafariServices { });
+
   pyobjc-framework-SearchKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SearchKit { });
 
   pyobjc-framework-Security = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Security { });
