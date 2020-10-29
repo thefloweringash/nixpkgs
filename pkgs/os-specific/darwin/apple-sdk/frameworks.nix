@@ -6,7 +6,7 @@
 
 with frameworks; with libs; {
   AGL                     = { inherit Carbon OpenGL; };
-  AVFoundation            = { inherit ApplicationServices CoreGraphics; };
+  AVFoundation            = { inherit ApplicationServices CoreGraphics CoreMedia; };
   AVKit                   = { inherit AppKit; };
   Accounts                = {};
   AddressBook             = { inherit libobjc Carbon ContactsPersistence; };
