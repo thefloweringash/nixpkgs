@@ -5295,6 +5295,8 @@ in {
 
   pyobjc-framework-AddressBook = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-AddressBook { });
 
+  pyobjc-framework-AdSupport = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-AdSupport { });
+
   pyobjc-framework-AppleScriptKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-AppleScriptKit { });
 
   pyobjc-framework-AVFoundation = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-AVFoundation { });
