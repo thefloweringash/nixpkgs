@@ -5317,6 +5317,8 @@ in {
 
   pyobjc-framework-CoreData = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreData { });
 
+  pyobjc-framework-CoreHaptics = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreHaptics { });
+
   pyobjc-framework-CoreLocation = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreLocation { });
 
   pyobjc-framework-CoreMedia = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreMedia { });
