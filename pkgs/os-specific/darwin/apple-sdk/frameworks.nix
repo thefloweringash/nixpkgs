@@ -84,6 +84,8 @@ with frameworks; with libs; {
   MetalKit                = { inherit AppKit ModelIO Metal; };
   ModelIO                 = {};
   NetFS                   = {};
+  # Available with SDK 10.14
+  Network                 = {};
   NetworkExtension        = {};
   NotificationCenter      = { inherit AppKit; };
   OSAKit                  = { inherit Carbon; };
