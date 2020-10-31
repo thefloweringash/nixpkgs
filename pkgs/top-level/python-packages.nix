@@ -5457,6 +5457,8 @@ in {
 
   pyobjc-framework-ServiceManagement = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-ServiceManagement { });
 
+  pyobjc-framework-SoundAnalysis = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SoundAnalysis { });
+
   pyobjc-framework-Speech = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Speech { });
 
   pyobjc-framework-SpriteKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SpriteKit { });
