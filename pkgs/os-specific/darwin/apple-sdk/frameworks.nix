@@ -99,6 +99,8 @@ with frameworks; with libs; {
   OpenAL                  = {};
   OpenCL                  = { inherit IOSurface OpenGL; };
   OpenGL                  = {};
+  # Available with SDK 10.15
+  OSLog                   = {};
   PCSC                    = { inherit CoreData; };
   Photos                  = { inherit CoreImage CoreMedia CoreVideo; };
   PhotosUI                = { inherit AppKit Photos; };
