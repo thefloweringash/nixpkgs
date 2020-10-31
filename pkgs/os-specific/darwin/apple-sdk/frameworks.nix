@@ -104,6 +104,8 @@ with frameworks; with libs; {
   PhotosUI                = { inherit AppKit Photos; };
   PreferencePanes         = {};
   PubSub                  = {};
+  # Available with SDK 10.15
+  PushKit                 = {};
   QTKit                   = { inherit CoreMediaIO CoreMedia MediaToolbox QuickTime VideoToolbox; };
   QuickLook               = { inherit ApplicationServices; };
   SafariServices          = { inherit AppKit; };
