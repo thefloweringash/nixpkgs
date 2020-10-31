@@ -5427,6 +5427,8 @@ in {
 
   pyobjc-framework-PreferencePanes = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-PreferencePanes { });
 
+  pyobjc-framework-PushKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-PushKit { });
+
   pyobjc-framework-Quartz = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Quartz { });
 
   pyobjc-framework-QuickLookThumbnailing = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-QuickLookThumbnailing { });
