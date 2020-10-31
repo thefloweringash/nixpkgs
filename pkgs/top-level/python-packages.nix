@@ -5431,6 +5431,8 @@ in {
 
   pyobjc-framework-Speech = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Speech { });
 
+  pyobjc-framework-SpriteKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SpriteKit { });
+
   pyobjc-framework-StoreKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-StoreKit { });
 
   pyobjc-framework-SyncServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SyncServices { });
