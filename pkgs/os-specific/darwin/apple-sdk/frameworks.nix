@@ -39,6 +39,8 @@ with frameworks; with libs; {
   CoreMIDIServer          = { inherit CoreMIDI; };
   CoreMedia               = { inherit ApplicationServices AudioToolbox AudioUnit CoreAudio CoreGraphics CoreVideo; };
   CoreMediaIO             = { inherit CoreMedia; };
+  # Available with SDK 10.13
+  CoreML                  = {};
   CoreText                = { inherit CoreGraphics; };
   CoreVideo               = { inherit ApplicationServices CoreGraphics IOSurface Metal OpenGL; };
   CoreWLAN                = { inherit SecurityFoundation; };
