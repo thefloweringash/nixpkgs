@@ -5383,6 +5383,8 @@ in {
 
   pyobjc-framework-PencilKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-PencilKit { });
 
+  pyobjc-framework-Photos = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Photos { });
+
   pyobjc-framework-Quartz = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-Quartz { });
 
   pyobjc-framework-SafariServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-SafariServices { });
