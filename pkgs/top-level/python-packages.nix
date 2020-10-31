@@ -5315,6 +5315,8 @@ in {
 
   pyobjc-framework-ColorSync = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-ColorSync { });
 
+  pyobjc-framework-CoreBluetooth = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreBluetooth { });
+
   pyobjc-framework-CoreData = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreData { });
 
   pyobjc-framework-CoreHaptics = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreHaptics { });
