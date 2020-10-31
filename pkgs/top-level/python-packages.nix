@@ -5405,6 +5405,8 @@ in {
 
   pyobjc-framework-MetalKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-MetalKit { });
 
+  pyobjc-framework-ModelIO = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-ModelIO { });
+
   pyobjc-framework-NaturalLanguage = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-NaturalLanguage { });
 
   pyobjc-framework-NetFS = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-NetFS { });
