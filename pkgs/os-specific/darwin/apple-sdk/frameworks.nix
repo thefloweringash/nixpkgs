@@ -124,6 +124,8 @@ with frameworks; with libs; {
   SystemConfiguration     = { inherit Security; };
   TWAIN                   = { inherit Carbon; };
   Tcl                     = {};
+  # Available with SDK 10.14
+  UserNotifications       = {};
   VideoDecodeAcceleration = { inherit CoreVideo; };
   VideoToolbox            = { inherit CoreMedia CoreVideo; };
   WebKit                  = { inherit libobjc AppKit ApplicationServices Carbon JavaScriptCore OpenGL; };
