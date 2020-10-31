@@ -5331,6 +5331,8 @@ in {
 
   pyobjc-framework-CoreMediaIO = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreMediaIO { });
 
+  pyobjc-framework-CoreMotion = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreMotion { });
+
   pyobjc-framework-CoreServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreServices { });
 
   pyobjc-framework-CoreText = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreText { });
