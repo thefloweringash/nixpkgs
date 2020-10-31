@@ -17,6 +17,8 @@ with frameworks; with libs; {
   AudioToolbox            = { inherit CoreAudio CoreMIDI; };
   AudioUnit               = { inherit AudioToolbox Carbon CoreAudio; };
   AudioVideoBridging      = { inherit Foundation; };
+  # Available with SDK 10.15
+  AuthenticationServices  = {};
   Automator               = {};
   CFNetwork               = {};
   CalendarStore           = {};
