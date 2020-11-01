@@ -5379,6 +5379,8 @@ in {
 
   pyobjc-framework-FileProvider = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FileProvider { });
 
+  pyobjc-framework-FileProviderUI = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FileProviderUI { });
+
   pyobjc-framework-FinderSync = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FinderSync { });
 
   pyobjc-framework-FSEvents = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-FSEvents { });
