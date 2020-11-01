@@ -41,6 +41,8 @@ with frameworks; with libs; {
   CoreMediaIO             = { inherit CoreMedia; };
   # Available with SDK 10.13
   CoreML                  = {};
+  # Available with SDK 10.13
+  CoreSpotlight           = {};
   CoreText                = { inherit CoreGraphics; };
   CoreVideo               = { inherit ApplicationServices CoreGraphics IOSurface Metal OpenGL; };
   CoreWLAN                = { inherit SecurityFoundation; };
