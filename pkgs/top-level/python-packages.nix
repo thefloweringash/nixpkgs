@@ -5411,6 +5411,8 @@ in {
 
   pyobjc-framework-libdispatch = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-libdispatch { });
 
+  pyobjc-framework-LinkPresentation = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-LinkPresentation { });
+
   pyobjc-framework-LocalAuthentication = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-LocalAuthentication { });
 
   pyobjc-framework-MapKit = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-MapKit { });
