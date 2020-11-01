@@ -5351,6 +5351,8 @@ in {
 
   pyobjc-framework-CoreServices = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreServices { });
 
+  pyobjc-framework-CoreSpotlight = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreSpotlight { });
+
   pyobjc-framework-CoreText = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreText { });
 
   pyobjc-framework-CoreWLAN = enabledIfDarwin (callPackage ../development/python-modules/pyobjc-framework-CoreWLAN { });
