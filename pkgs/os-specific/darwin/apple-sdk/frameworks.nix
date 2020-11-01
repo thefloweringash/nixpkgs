@@ -136,6 +136,8 @@ with frameworks; with libs; {
   UserNotifications       = {};
   VideoDecodeAcceleration = { inherit CoreVideo; };
   VideoToolbox            = { inherit CoreMedia CoreVideo; };
+  # Available with SDK 10.13
+  Vision                  = {};
   WebKit                  = { inherit libobjc AppKit ApplicationServices Carbon JavaScriptCore OpenGL; };
 
   # Umbrellas
