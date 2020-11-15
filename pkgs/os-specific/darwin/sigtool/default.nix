@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, pkg-config, cmake, cryptopp, cli11 }:
+{ stdenv, fetchFromGitHub, pkg-config, cmake, openssl, cli11 }:
 
 let
   inherit (stdenv) lib;
@@ -10,12 +10,12 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "thefloweringash";
     repo = "sigtool";
-    rev = "3c447d5ba14f912b76ac2c876d29a201377142fb";
-    sha256 = "017abmvl6mf83ij7ak4q5frv235fcahdlbn74fjh2rkk0aknzigk";
+    rev = "eb21a915936168f669e0c1c2170af34af4201bc2";
+    sha256 = "011248fm9rgm5b2jja9ngb9kic0mpm8pphipjybnfwblzdfvcjl8";
   };
 
   nativeBuildInputs = [ pkg-config cmake ];
-  buildInputs = [ cryptopp cli11 ];
+  buildInputs = [ openssl cli11 ];
 
   installPhase = ''
     mkdir -p $out/bin
