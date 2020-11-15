@@ -7,7 +7,7 @@ stdenvNoCC.mkDerivation {
   dontBuild = true;
   dontUnpack = true;
 
-  nativeBuildInputs = [ buildPackages.darwin.checkReexportsHook ];
+  nativeBuildInputs = [ buildPackages.darwin.rewrite-tbd ];
 
   includeDirs = [
     "CommonCrypto" "_types" "architecture" "arpa" "atm" "bank" "bsd" "bsm"
@@ -65,9 +65,13 @@ stdenvNoCC.mkDerivation {
       fi
     done
 
+    chmod u+w -R $out/lib
     find $out -name '*.tbd' -type f | while read tbd; do
-      substituteInPlace "$tbd" \
-        --subst-var-by "Libsystem" "$out"
+      rewrite-tbd \
+        -c /usr/lib/libsystem.dylib:$out/lib/libsystem.dylib \
+        -p /usr/lib/system/:$out/lib/system/ \
+        -r ${builtins.storeDir} \
+        "$tbd"
     done
   '';
 }
