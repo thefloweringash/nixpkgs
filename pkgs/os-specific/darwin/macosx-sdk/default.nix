@@ -1,19 +1,35 @@
-{ stdenvNoCC, fetchurl, newScope, pkgs }:
+{ stdenvNoCC, fetchurl, newScope, pkgs
+, xar, cpio, python3, pbzx }:
 
 let
   MacOSX-SDK = stdenvNoCC.mkDerivation rec {
     pname = "MacOSX-SDK";
     version = "11.0.0";
 
+    # https://swscan.apple.com/content/catalogs/others/index-10.16.merged-1.sucatalog
     src = fetchurl {
-      url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/apple-silicon-wip/beta-sdk-linked-2.tar.gz";
-      sha256 = "15z02wv3vi63la71clf0nwk5k8g2qvkxpi61yvs0ic8bb9g2sd55";
+      url = "http://swcdn.apple.com/content/downloads/58/37/001-75138-A_59RXKDS8YM/12ksm19hgzscfc7cau3yhecz4vpkps7wbq/CLTools_macOSNMOS_SDK.pkg";
+      sha256 = "0n51ba926ckwm62w5c8lk3w5hj4ihk0p5j02321qi75wh824hl8m";
     };
 
     dontBuild = true;
     darwinDontCodeSign = true;
 
+    nativeBuildInputs = [ xar cpio pbzx ];
+
+    outputs = [ "out" ];
+
+    unpackPhase = ''
+      xar -x -f $src
+    '';
+
     installPhase = ''
+      mkdir extract
+      cd extract
+      pbzx -n ../Payload | cpio -idm
+
+      cd Library/Developer/CommandLineTools/SDKs/MacOSX11.0.sdk
+
       mkdir $out
       cp -r System usr $out/
     '';
@@ -30,7 +46,7 @@ let
 
     # TODO: this is nice to be private. is it worth the callPackage above?
     # Probably, I don't think that callPackage costs much at all.
-    # inherit MacOSX-SDK;
+    inherit MacOSX-SDK;
 
     Libsystem = callPackage ./libSystem.nix {};
     LibsystemCross = pkgs.darwin.Libsystem;

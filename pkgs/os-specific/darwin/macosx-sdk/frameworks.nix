@@ -27,7 +27,6 @@
   CallKit                             = {};
   Carbon                              = { inherit ApplicationServices; };
   ClassKit                            = {};
-  ClockKit                            = {};
   CloudKit                            = {};
   Cocoa                               = { inherit AppKit CoreData; };
   Collaboration                       = {};
