@@ -84,6 +84,8 @@ in
 
   print-reexports = callPackage ../os-specific/darwin/print-reexports { };
 
+  rewrite-tbd = callPackage ../os-specific/darwin/rewrite-tbd { };
+
   sigtool = callPackage ../os-specific/darwin/sigtool { };
 
   autoSignDarwinBinariesHook = makeSetupHook {
