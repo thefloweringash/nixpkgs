@@ -15,19 +15,15 @@ let
     dontBuild = true;
     darwinDontCodeSign = true;
 
-    nativeBuildInputs = [ xar cpio pbzx ];
+    nativeBuildInputs = [ cpio pbzx ];
 
     outputs = [ "out" ];
 
     unpackPhase = ''
-      xar -x -f $src
+      pbzx $src | cpio -idm
     '';
 
     installPhase = ''
-      mkdir extract
-      cd extract
-      pbzx -n ../Payload | cpio -idm
-
       cd Library/Developer/CommandLineTools/SDKs/MacOSX11.0.sdk
 
       mkdir $out
