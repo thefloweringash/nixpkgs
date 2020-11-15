@@ -109,13 +109,13 @@ in rec {
       mkdir $out/include
       cp -rd ${llvmPackages.libcxx}/include/c++     $out/include
 
-      # copy print-reexports and dependencies
-      cp ${pkgs.darwin.print-reexports}/bin/print-reexports $out/bin
+      # copy .tbd assembly utils
+      cp -d ${pkgs.darwin.rewrite-tbd}/bin/rewrite-tbd $out/bin
       cp -d ${pkgs.libyaml}/lib/libyaml*.dylib $out/lib
+      cp -d ${pkgs.xar}/lib/libxar*.dylib $out/bin
 
-      # copy sigtool and dependencies
-      cp ${pkgs.darwin.sigtool}/bin/gensig $out/bin
-      cp -d ${pkgs.cryptopp}/lib/libcryptopp*.dylib $out/lib
+      # copy sigtool
+      cp -d ${pkgs.darwin.sigtool}/bin/gensig $out/bin
 
       cp -d ${darwin.ICU}/lib/libicu*.dylib $out/lib
       cp -d ${zlib.out}/lib/libz.*       $out/lib
