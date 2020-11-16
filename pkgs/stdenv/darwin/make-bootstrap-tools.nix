@@ -112,7 +112,10 @@ in rec {
       # copy .tbd assembly utils
       cp -d ${pkgs.darwin.rewrite-tbd}/bin/rewrite-tbd $out/bin
       cp -d ${pkgs.libyaml}/lib/libyaml*.dylib $out/lib
-      cp -d ${pkgs.xar}/lib/libxar*.dylib $out/bin
+
+      # copy package extraction tools
+      cp -d ${pkgs.pbzx}/bin/pbzx $out/bin
+      cp -d ${pkgs.xar}/lib/libxar*.dylib $out/lib
 
       # copy sigtool
       cp -d ${pkgs.darwin.sigtool}/bin/gensig $out/bin
