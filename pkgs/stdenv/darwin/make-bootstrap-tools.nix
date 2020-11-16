@@ -116,6 +116,7 @@ in rec {
       # copy package extraction tools
       cp -d ${pkgs.pbzx}/bin/pbzx $out/bin
       cp -d ${pkgs.xar}/lib/libxar*.dylib $out/lib
+      cp -d ${pkgs.bzip2.out}/lib/libbz2*.dylib $out/lib
 
       # copy sigtool
       cp -d ${pkgs.darwin.sigtool}/bin/gensig $out/bin
