@@ -165,7 +165,6 @@ in rec {
           last.pkgs.darwin.autoSignDarwinBinariesHook
           last.pkgs.darwin.postLinkSignHook
           last.pkgs.darwin.sigtool
-          last.pkgs.cryptopp
         ];
 
         buildPlatform = localSystem;
@@ -219,9 +218,6 @@ in rec {
       # package.
       coreutils = { name = "bootstrap-stage0-coreutils"; outPath = bootstrapTools; };
       gnugrep   = { name = "bootstrap-stage0-gnugrep";   outPath = bootstrapTools; };
-
-      # used by sigtool, included in allowedRequisites
-      cryptopp = { name = "bootstrap-stage0-cryptopp"; outPath = bootstrapTools; };
 
       pbzx = stdenv.mkDerivation {
         name = "bootstrap-stage0-pbzx";
@@ -409,7 +405,7 @@ in rec {
         libxml2 gettext sharutils gmp libarchive ncurses pkg-config libedit groff
         openssh sqlite sed serf openldap db cyrus-sasl expat apr-util subversion xz
         findfreetype libssh curl cmake autoconf automake libtool ed cpio coreutils
-        libssh2 nghttp2 libkrb5 ninja cryptopp;
+        libssh2 nghttp2 libkrb5 ninja;
 
       "${finalLlvmPackages}" = super."${finalLlvmPackages}" // (let
         tools = super."${finalLlvmPackages}".tools.extend (_: _: {
@@ -464,7 +460,7 @@ in rec {
         gettext sharutils libarchive pkg-config groff bash subversion
         openssh sqlite sed serf openldap db cyrus-sasl expat apr-util
         findfreetype libssh curl cmake autoconf automake libtool cpio
-        libssh2 nghttp2 libkrb5 ninja cryptopp;
+        libssh2 nghttp2 libkrb5 ninja;
 
       # Avoid pulling in a full python and its extra dependencies for the llvm/clang builds.
       libxml2 = super.libxml2.override { pythonSupport = false; };
@@ -638,7 +634,6 @@ in rec {
       curl.out openssl.out libssh2.out nghttp2.lib
       cc.expand-response-params libxml2.out
     ] ++ lib.optional haveKRB5 libkrb5
-    ++ lib.optional doSign cryptopp
     ++ lib.optionals localSystem.isAarch64 [
       pkgs.updateAutotoolsGnuConfigScriptsHook pkgs.gnu-config
     ])
