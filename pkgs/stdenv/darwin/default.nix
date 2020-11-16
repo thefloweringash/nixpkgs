@@ -223,6 +223,24 @@ in rec {
       # used by sigtool, included in allowedRequisites
       cryptopp = { name = "bootstrap-stage0-cryptopp"; outPath = bootstrapTools; };
 
+      pbzx = stdenv.mkDerivation {
+        name = "bootstrap-stage0-pbzx";
+        phases = [ "installPhase" ];
+        installPhase = ''
+          mkdir -p $out/bin
+          ln -s ${bootstrapTools}/bin/pbzx $out/bin
+        '';
+      };
+
+      cpio = stdenv.mkDerivation {
+        name = "bootstrap-stage0-cpio";
+        phases = [ "installPhase" ];
+        installPhase = ''
+          mkdir -p $out/bin
+          ln -s ${bootstrapFiles.cpio} $out/bin/cpio
+        '';
+      };
+
       darwin = super.darwin // {
         dyld = bootstrapTools;
 
@@ -241,6 +259,15 @@ in rec {
           installPhase = ''
             mkdir -p $out/bin
             ln -s ${bootstrapTools}/bin/print-reexports $out/bin
+          '';
+        };
+
+        rewrite-tbd = stdenv.mkDerivation {
+          name = "bootstrap-stage0-rewrite-tbd";
+          phases = [ "installPhase" ];
+          installPhase = ''
+            mkdir -p $out/bin
+            ln -s ${bootstrapTools}/bin/rewrite-tbd $out/bin
           '';
         };
 
@@ -329,6 +356,8 @@ in rec {
         useSharedLibraries = false;
       };
 
+      inherit pbzx cpio;
+
       cli11 = super.cli11.overrideAttrs(_: {
         doCheck = false;
         checkInputs = [];
@@ -348,6 +377,8 @@ in rec {
       in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // {
+        inherit (darwin) rewrite-tbd;
+
         binutils = darwin.binutils.override {
           libc = self.darwin.Libsystem;
           extraPackages = lib.optional localSystem.isAarch64 [ self.pkgs.darwin.sigtool ];
