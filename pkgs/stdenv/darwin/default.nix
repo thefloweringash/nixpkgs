@@ -560,10 +560,10 @@ in rec {
       inherit
         gnumake gzip gnused bzip2 gawk ed xz patch bash
         ncurses libffi zlib gmp pcre gnugrep
-        coreutils findutils diffutils patchutils;
+        coreutils findutils diffutils patchutils pbzx;
 
       darwin = super.darwin // {
-        inherit (darwin) dyld ICU Libsystem Csu libiconv;
+        inherit (darwin) dyld ICU Libsystem Csu libiconv rewrite-tbd;
       } // lib.optionalAttrs (super.stdenv.targetPlatform == localSystem) {
         inherit (darwin) binutils binutils-unwrapped cctools;
       };
