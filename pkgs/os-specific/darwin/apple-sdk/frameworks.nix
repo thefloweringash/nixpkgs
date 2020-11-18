@@ -92,6 +92,7 @@ with frameworks; with libs; {
   Metal                   = {};
   MetalKit                = { inherit AppKit ModelIO Metal; };
   ModelIO                 = {};
+  MultipeerConnectivity   = { inherit Cocoa; };
   NetFS                   = {};
   # Available with SDK 10.14
   Network                 = {};
