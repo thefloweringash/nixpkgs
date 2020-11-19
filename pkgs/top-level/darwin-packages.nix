@@ -56,6 +56,31 @@ in
     deps = [ darwin.sigtool ];
   } ../os-specific/darwin/sigtool/setup-hook.sh;
 
+  # TODO: overlaps a lot with the sigtool setup hook
+  postLinkSignHook = writeTextFile {
+    name = "post-link-sign-hook";
+    executable = true;
+    text = ''
+      signDarwinBinary() {
+        local path="$1"
+        local sigsize arch
+
+        arch=$(gensig --file "$path" show-arch)
+
+        sigsize=$(gensig --file "$path" size)
+        sigsize=$(( ((sigsize + 15) / 16) * 16 + 1024 ))
+
+        ${darwin.binutils.targetPrefix}codesign_allocate -i "$path" -a "$arch" "$sigsize" -o "$path.unsigned"
+        gensig --identifier "$(basename "$path")" --file "$path.unsigned" inject
+        mv -f "$path.unsigned" "$path"
+      }
+
+      if gensig --file "$linkerOutput" check-requires-signature; then
+        signDarwinBinary "$linkerOutput"
+      fi
+    '';
+  };
+
   checkReexportsHook = makeSetupHook {
     deps = [ pkgs.darwin.print-reexports ];
   } ../os-specific/darwin/print-reexports/setup-hook.sh;
