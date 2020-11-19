@@ -1,6 +1,12 @@
-{ stdenv, appleDerivation, libdispatch, xnu }:
+{ stdenv, appleDerivation, stdenvNoCC, libdispatch, xnu }:
 
-appleDerivation {
+let
+  appleDerivation_ = appleDerivation.override {
+    stdenv = stdenvNoCC;
+  };
+in
+
+appleDerivation_ {
   propagatedBuildInputs = [ libdispatch xnu ];
 
   installPhase = ''
