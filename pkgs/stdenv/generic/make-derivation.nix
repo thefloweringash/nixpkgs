@@ -251,6 +251,15 @@ in rec {
                lib.optional (!stdenv.hostPlatform.isRedox) stdenv.hostPlatform.uname.system)}"]
           ++ lib.optional (stdenv.hostPlatform.uname.processor != null) "-DCMAKE_SYSTEM_PROCESSOR=${stdenv.hostPlatform.uname.processor}"
           ++ lib.optional (stdenv.hostPlatform.uname.release != null) "-DCMAKE_SYSTEM_VERSION=${stdenv.hostPlatform.release}"
+          ++ lib.optional (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.uname.processor != null) (
+            let
+              platformArch = { parsed, ... }: {
+                armv7a  = "armv7";
+                aarch64 = "arm64";
+                x86_64  = "x86_64";
+              }.${parsed.cpu.name};
+            in "-DCMAKE_OSX_ARCHITECTURES=${platformArch stdenv.hostPlatform}"
+          )
           ++ lib.optional (stdenv.buildPlatform.uname.system != null) "-DCMAKE_HOST_SYSTEM_NAME=${stdenv.buildPlatform.uname.system}"
           ++ lib.optional (stdenv.buildPlatform.uname.processor != null) "-DCMAKE_HOST_SYSTEM_PROCESSOR=${stdenv.buildPlatform.uname.processor}"
           ++ lib.optional (stdenv.buildPlatform.uname.release != null) "-DCMAKE_HOST_SYSTEM_VERSION=${stdenv.buildPlatform.uname.release}";
