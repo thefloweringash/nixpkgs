@@ -1,6 +1,6 @@
-{ stdenv, fetchFromGitHub }:
+{ stdenvNoCC, fetchFromGitHub }:
 
-stdenv.mkDerivation {
+stdenvNoCC.mkDerivation {
   pname = "darwin-stubs";
   version = "10.12";
 
