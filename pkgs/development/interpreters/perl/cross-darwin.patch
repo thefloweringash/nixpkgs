@@ -1,0 +1,212 @@
+diff --git a/Makefile b/Makefile
+index c5253a0..2968ca9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -140,7 +140,10 @@ ifeq ($(soname),)
+ perl$x: LDFLAGS += -Wl,-rpath,$(archlib)/CORE
+ endif
+ endif # or should it be "else"?
++
++ifeq ($(soname),so)
+ perl$x: LDFLAGS += -Wl,-E
++endif
+ 
+ perl$x: perlmain$o $(LIBPERL) $(static_modules) static.list ext.libs
+ 	$(eval extlibs=$(shell cat ext.libs))
+@@ -185,7 +188,7 @@ endif
+ 
+ ifeq ($(useshrplib),true)
+ $(LIBPERL):
+-	$(CC) $(LDDLFLAGS) -o $@ $(filter %$o,$^) $(LIBS)
++	$(CC) -shared -o $@ $(filter %$o,$^) $(LIBS)
+ else
+ $(LIBPERL):
+ 	$(AR) cru $@ $(filter %$o,$^)
+diff --git a/cnf/configure_args.sh b/cnf/configure_args.sh
+index 66f94fc..2f30c14 100644
+--- a/cnf/configure_args.sh
++++ b/cnf/configure_args.sh
+@@ -187,8 +187,8 @@ while [ $i -le $# -o -n "$n" ]; do
+ 			fi
+ 			;;
+ 		host-*)
+-			what=`echo "$a" | sed -e 's/^host-//'`
+-			hco="$hco --$what=$v"
++			what=`echo "$a" | sed -e 's/^host//'`
++			hco="$hco $what=$v"
+ 			;;
+ 		with-*)
+ 			what=`echo "$a" | sed -r -e 's/^[^-]+-//' -e 's/-/_/g'`
+diff --git a/cnf/configure_misc.sh b/cnf/configure_misc.sh
+index a1bb447..545b726 100644
+--- a/cnf/configure_misc.sh
++++ b/cnf/configure_misc.sh
+@@ -32,7 +32,9 @@ define State
+ define usemmldlt 'define'
+ 
+ # Used by modules?
+-define dlext 'so'
++# TODO: getting in the way of darwin
++#define dlext 'so'
++define dlext 'bundle'
+ define dlsrc 'dl_dlopen.xs'
+ 
+ # Required by lib/Config.t, and configpm may use these.
+diff --git a/cnf/configure_tool.sh b/cnf/configure_tool.sh
+index 7b0baa4..285772c 100644
+--- a/cnf/configure_tool.sh
++++ b/cnf/configure_tool.sh
+@@ -88,8 +88,7 @@ whichprog cc CC gcc || whichprog cc CC cc || die "No C compiler found"
+ whichprog ar AR ar || die "Cannot find ar"
+ whichprog nm NM nm
+ whichprog ranlib RANLIB ranlib
+-whichprog readelf READELF readelf || die "Cannot find readelf"
+-whichprog objdump OBJDUMP objdump || die "Cannot find objdump"
++whichprog objdump OBJDUMP objdump
+ 
+ # XXX: this looks wrong, but the usemmldlt code depends on $ld being able
+ # to compile try.c. What kind of moron could have written that. Oh wait.
+@@ -149,15 +148,16 @@ fi
+ # File name extensions, must be set before running any compile/link tests
+ define _o '.o'
+ define _a '.a'
+-define so 'so'
++# define so 'so' # TODO: getting in the way of darwin
++define so 'dylib'
+ define _exe ''
+ 
+ # Used only for modules
+-define cccdlflags '-fPIC -Wno-unused-function'
+-define ccdlflags '-Wl,-E'
++# define cccdlflags '-fPIC -Wno-unused-function' # TODO avoiding fic on darwin
++# define ccdlflags '-Wl,-E' # TODO disabled to be able to use platform hints (this runs before hints)
+ 
+ # Misc flags setup
+-predef lddlflags "-shared"	# modules
++predef lddlflags '' # modules (TODO: darwin)
+ predef ccflags ''		# perl and modules
+ predef ldflags ''		# perl only?
+ predef cppflags ''		# unused?
+@@ -202,7 +202,7 @@ fi
+ 
+ # enddef ccflags # done later in _hdrs because of LARGEFILE_SOURCE
+ enddef ldflags
+-enddef lddlflags
++# enddef lddlflags # done later at end of file for darwin
+ enddef cppflags
+ 
+ mstart "Checking whether ld supports scripts"
+@@ -270,12 +270,23 @@ if not hinted 'osname'; then
+ 			define osname "gnu"
+ 			result "GNU"
+ 			;;
++		*-darwin*)
++			define osname "darwin"
++			result "Darwin"
++			;;
+ 		*)
+ 			result "no"
+ 			;;
+ 	esac
+ fi
+ 
++if [ "$osname" == darwin ]; then
++	append lddlflags '-bundle -undefined dynamic_lookup'
++	append ccflags '-fno-common -DPERL_DARWIN -DPERL_USE_SAFE_PUTENV'
++fi
++
++enddef lddlflags
++
+ # Check whether debugging should be enabled
+ # Allow -DEBUGGING as well (sets EBUGGING=define)
+ case "$DEBUGGING:$EBUGGING" in
+diff --git a/cnf/configure_type.sh b/cnf/configure_type.sh
+index 1acd3b1..176ffa1 100644
+--- a/cnf/configure_type.sh
++++ b/cnf/configure_type.sh
+@@ -19,9 +19,49 @@ checktype() {
+ 	resdef $1 'found' 'missing'
+ }
+ 
+-# XXX: this probably won't work on non-ELF hosts.
+-# TODO: add test for readelf usability, and switch
+-# to objdump if possible
++# try_boolean expr includes
++try_boolean() {
++	try_start
++	try_includes $2
++	try_add "int main(void) {"
++	try_add "  char test_array[1 - 2 * !($1)];"
++	try_add "  test_array[0] = 0;"
++	try_add "  return test_array[0];"
++	try_add "}"
++	try_compile
++}
++
++# search_size type includes
++search_size() {
++	# logic adapted from autoconf
++	# ca1006165900df4707b0caaa0a9378923812cca0
++	local lo hi try
++	lo=0
++	try=0
++
++	# find an upper bound
++	while true; do
++		if try_boolean "sizeof($1) <= $try" "$2"; then
++			hi=$try
++			break;
++		else
++			lo=$(( try + 1 ))
++			try=$(( try * 2 + 1 ))
++		fi
++	done
++
++	# binary search between lo and hi
++	while [ "$lo" != "$hi" ]; do
++		try=$(( (hi - lo) / 2 + lo ))
++		if try_boolean "sizeof($1) <= $try" "$2"; then
++			hi=$try
++		else
++			lo=$(( try + 1 ))
++		fi
++	done
++
++	echo "$lo"
++}
+ 
+ # checksize symbol type includes
+ checksize() {
+@@ -38,13 +78,7 @@ checksize() {
+ 		return
+ 	fi
+ 
+-	if not try_readelf --syms > try.out 2>>$cfglog; then
+-		result 'unknown'
+-		die "Cannot determine sizeof($2), use -D${1}size="
+-		return
+-	fi
+-
+-	result=`grep foo try.out | sed -r -e 's/.*: [0-9]+ +//' -e 's/ .*//' -e 's/^0+//g'`
++	result=$(search_size "$2" "$3")
+ 	if [ -z "$result" -o "$result" -le 0 ]; then
+ 		result "unknown"
+ 		die "Cannot determine sizeof($2)"
+diff --git a/cnf/hints/darwin b/cnf/hints/darwin
+new file mode 100644
+index 0000000..3ce84e4
+--- /dev/null
++++ b/cnf/hints/darwin
+@@ -0,0 +1,12 @@
++d_nanosleep='define'
++d_syscall='undef'
++so='dylib'
++dlext='bundle'
++usedl='define'
++ccdlflags=' '
++ldlibpthname='DYLD_LIBRARY_PATH'
++usevfork='true'
++usemallocwrap='define'
++usemymalloc='n'
++ranlib='ranlib'
++libperl='libperl.dylib'
