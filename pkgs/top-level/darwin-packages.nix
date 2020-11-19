@@ -91,6 +91,16 @@ in
 
   sigtool = callPackage ../os-specific/darwin/sigtool { };
 
+  postLinkSignHook = writeTextFile {
+    name = "post-link-sign-hook";
+    executable = true;
+
+    text = ''
+      CODESIGN_ALLOCATE=${darwin.binutils.targetPrefix}codesign_allocate \
+        ${darwin.sigtool}/bin/codesign -f -s - "$linkerOutput"
+    '';
+  };
+
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
   };
