@@ -350,7 +350,11 @@ stdenv.mkDerivation {
     # ${cc_solib}/lib64 (even though it does actually search there...)..
     # This confuses libtool.  So add it to the compiler tool search
     # path explicitly.
-    + optionalString (!nativeTools) ''
+    #
+    # TODO: this was inserting references to non-existent directories under
+    # clang.  I could have gone for an existence check, but I think this setup
+    # is just irrelevant for clang.
+    + optionalString (!nativeTools && (cc.isGNU or false)) ''
       if [ -e "${cc_solib}/lib64" -a ! -L "${cc_solib}/lib64" ]; then
         ccLDFlags+=" -L${cc_solib}/lib64"
         ccCFlags+=" -B${cc_solib}/lib64"
