@@ -56,6 +56,8 @@ appleDerivation {
     #endif
     EOF
 
+    # Overriding the version from CarbonHeaders
+    rm -f $out/include/TargetConditionals.h
     cat <<EOF > $out/include/TargetConditionals.h
     #ifndef __TARGETCONDITIONALS__
     #define __TARGETCONDITIONALS__
