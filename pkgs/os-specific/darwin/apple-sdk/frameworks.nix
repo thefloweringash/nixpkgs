@@ -148,7 +148,7 @@ with frameworks; with libs; {
   ApplicationServices = { inherit CoreGraphics CoreServices CoreText ImageIO; };
   Carbon              = { inherit libobjc ApplicationServices CoreServices Foundation IOKit Security QuartzCore; };
   CoreBluetooth       = {};
-  CoreServices        = { inherit CFNetwork CoreAudio CoreData DiskArbitration Security NetFS OpenDirectory ServiceManagement; };
+  CoreServices        = { inherit CFNetwork CoreAudio CoreData CoreFoundation DiskArbitration Security NetFS OpenDirectory ServiceManagement; };
   IOBluetooth         = { inherit CoreBluetooth IOKit; };
   JavaVM              = {};
   OpenDirectory       = {};
