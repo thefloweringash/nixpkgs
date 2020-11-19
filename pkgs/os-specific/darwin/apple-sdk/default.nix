@@ -106,8 +106,6 @@ let
           cp -R "${sdk.out}/Library/Frameworks/$name.framework/Versions/$current/Headers" .
         fi
 
-        ln -s -L "/System/Library/Frameworks/$nested_path/Versions/$current/$name"
-
         local tbd_source=${darwin-stubs}/System/Library/Frameworks/$nested_path/Versions/$current
         # Skip frameworks which have no generated tbd file.
         if stat --printf="" "$tbd_source/*.tbd" 2>/dev/null; then
