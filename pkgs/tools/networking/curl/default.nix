@@ -7,7 +7,15 @@
 , gnutlsSupport ? false, gnutls ? null
 , wolfsslSupport ? false, wolfssl ? null
 , scpSupport ? zlibSupport && !stdenv.isSunOS && !stdenv.isCygwin, libssh2 ? null
-, gssSupport ? !stdenv.hostPlatform.isWindows, libkrb5 ? null
+, gssSupport ? !(
+    stdenv.hostPlatform.isWindows ||
+    # the "mig" tool does not configure its compiler correctly. This could be
+    # fixed in mig, but losing gss support on cross compilation to darwin is
+    # not worth the effort.
+    (stdenv.hostPlatform.isDarwin && (stdenv.buildPlatform != stdenv.hostPlatform)) ||
+    # TODO: Additionally the native build fails
+    (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64)
+  ), libkrb5 ? null
 , c-aresSupport ? false, c-ares ? null
 , brotliSupport ? false, brotli ? null
 }:
