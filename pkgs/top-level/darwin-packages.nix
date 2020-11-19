@@ -1,12 +1,41 @@
-{ buildPackages, pkgs, targetPackages
+{ lib, buildPackages, pkgs, targetPackages, writeTextFile
 , darwin, stdenv, callPackage, callPackages, newScope
+, makeSetupHook, CFCrossStdenv
 }:
 
 let
-  apple-source-releases = callPackage ../os-specific/darwin/apple-source-releases { };
+  # Open source packages that are built from source
+  appleSourcePackages = callPackage ../os-specific/darwin/apple-source-releases {};
+
+  # macOS 11.0 / 10.16 SDK (TODO: fix naming)
+  new_apple_sdk = callPackage ../os-specific/darwin/macosx-sdk { };
+
+  # macOS 10.12 SDK
+  old_apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
+    inherit (darwin) darwin-stubs print-reexports;
+  };
+
+  # Pick an SDK
+  apple_sdk = if stdenv.hostPlatform.isAarch64 then new_apple_sdk else old_apple_sdk;
+
+  # Pick the source of libraries: either Apple's open source releases, or the
+  # SDK.
+  useAppleSDKLibs = stdenv.hostPlatform.isAarch64;
+
+  chooseLibs = {
+    inherit (
+      if useAppleSDKLibs
+        then apple_sdk
+        else appleSourcePackages
+    ) Libsystem LibsystemCross libcharset libunwind objc4 ICU configd IOKit;
+  };
+
+  llvmPackages = if stdenv.hostPlatform.isAarch64 then pkgs.llvmPackages_10 else pkgs.llvmPackages_7;
 in
 
-(apple-source-releases // {
+(appleSourcePackages // chooseLibs // {
+
+  inherit apple_sdk;
 
   callPackage = newScope (darwin.apple_sdk.frameworks // darwin);
 
@@ -14,28 +43,36 @@ in
     extraBuildInputs = [];
   };
 
-  apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
-    inherit (darwin) darwin-stubs print-reexports;
-  };
-
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (darwin) cctools;
     inherit (pkgs) binutils-unwrapped;
-    inherit (pkgs.llvmPackages_7) llvm;
+    inherit (llvmPackages) llvm;
   };
 
   binutils = pkgs.wrapBintoolsWith {
-    libc =
-      if stdenv.targetPlatform != stdenv.hostPlatform
-      then pkgs.libcCross
-      else pkgs.stdenv.cc.libc;
+    libc = (x: builtins.trace ("darwin (target=${stdenv.targetPlatform.config}) setting binutils.libc=${x}") x) (
+
+      if stdenv.targetPlatform.isAarch64 && (stdenv.buildPlatform != stdenv.targetPlatform)
+      then new_apple_sdk.Libsystem
+      else pkgs.stdenv.cc.libc
+
+      ## TODO: this looks correct but goes into infinite recursing territory
+      ## if stdenv.targetPlatform != stdenv.hostPlatform
+      ## then pkgs.libcCross
+      ## else pkgs.stdenv.cc.libc
+    );
     bintools = darwin.binutils-unwrapped;
+    # TODO: make these only stdenv.targetPlatform.isAarch64
+    # but without infinite recursion
+    extraPackages = lib.optionals (stdenv.buildPlatform == stdenv.targetPlatform && stdenv.targetPlatform.isAarch64) [ darwin.sigtool ];
+    extraBuildCommands = lib.optionalString (stdenv.buildPlatform == stdenv.targetPlatform && stdenv.targetPlatform.isAarch64) ''
+      echo 'source ${darwin.postLinkSignHook}' >> $out/nix-support/post-link-hook
+    '';
   };
 
   cctools = callPackage ../os-specific/darwin/cctools/port.nix {
     inherit (darwin) libobjc maloader libtapi;
     stdenv = if stdenv.isDarwin then stdenv else pkgs.libcxxStdenv;
-    libcxxabi = pkgs.libcxxabi;
   };
 
   # TODO: remove alias.
@@ -100,7 +137,7 @@ in
 
   iproute2mac = callPackage ../os-specific/darwin/iproute2mac { };
 
-  libobjc = apple-source-releases.objc4;
+  libobjc = pkgs.darwin.objc4;
 
   lsusb = callPackage ../os-specific/darwin/lsusb { };
 
@@ -121,7 +158,60 @@ in
 
   CoreSymbolication = callPackage ../os-specific/darwin/CoreSymbolication { };
 
-  CF = callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
+  # TODO: make swift-corefoundation build with new_apple_sdk.Libsystem
+  CF = if useAppleSDKLibs
+    then apple_sdk.frameworks.CoreFoundation
+    else callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
+
+  # this is really a pain
+  # - we want our stdenv to contain CF.
+  # - non-cross does this in a bootstrap phase.
+  # - adding extra phases to cross messes up package adjacencies.
+  # => we define a "CF" package that does not depend on stdenv directly,
+  #    but everything in the dependency tree uses CFCrossStdenv or CFCrossStdenvNoCC, which
+  #    are simple aliases to remove extraBuildInputs.
+  # TODO: find a better way
+  #  - it's likely safe to say that all stdenvNoCC variants never require extraBuildInputs
+  #  - so replace CFCrossStdenvNoCC with stdenvNoCC
+  #  - which just leaves libxml2, zlib and curl
+  # CFCross = pkgs.darwin.CFCrossPkgs.hello;
+  CFCross = pkgs.darwin.CFCrossPkgs.CF;
+
+  CFCrossPkgs = let
+    packages = rec {
+      hello = pkgs.hello.override {
+        stdenv = CFCrossStdenv;
+      };
+
+      libxml2 = pkgs.libxml2.override {
+        stdenv = pkgs.CFCrossStdenv;
+        pythonSupport = false;
+        icuSupport = false;
+        zlib = pkgs.zlib.override {
+          stdenv = pkgs.CFCrossStdenv;
+        };
+      };
+
+      curl = pkgs.curl.override {
+        stdenv = pkgs.CFCrossStdenv;
+        http2Support = false;
+        idnSupport = false;
+        ldapSupport = false;
+        zlibSupport = false;
+        sslSupport = false;
+        gnutlsSupport = false;
+        scpSupport = false;
+        gssSupport = false;
+        c-aresSupport = false;
+        brotliSupport = false;
+      };
+
+      CF = pkgs.darwin.CF.override {
+        stdenv = pkgs.CFCrossStdenv;
+        inherit libxml2 curl;
+      };
+    };
+  in packages;
 
   # As the name says, this is broken, but I don't want to lose it since it's a direction we want to go in
   # libdispatch-broken = callPackage ../os-specific/darwin/swift-corelibs/libdispatch.nix { inherit (darwin) apple_sdk_sierra xnu; };
