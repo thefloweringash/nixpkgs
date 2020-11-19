@@ -9,7 +9,7 @@
 , autoreconfHook
 , etcDir ? null
 , hpnSupport ? false
-, withKerberos ? true
+, withKerberos ? !(stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64)
 , withGssapiPatches ? false
 , kerberos
 , libfido2
