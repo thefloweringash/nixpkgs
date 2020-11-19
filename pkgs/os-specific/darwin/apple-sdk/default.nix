@@ -107,8 +107,8 @@ let
         fi
 
         local tbd_source=${darwin-stubs}/System/Library/Frameworks/$nested_path/Versions/$current
-        # Skip frameworks which have no generated tbd file.
-        if stat --printf="" "$tbd_source/*.tbd" 2>/dev/null; then
+        if [ "${name}" != "Kernel" ]; then
+          # The Kernel.framework has headers but no actual library component.
           cp -v $tbd_source/*.tbd .
         fi
 
