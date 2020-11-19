@@ -1,14 +1,49 @@
-{ buildPackages, pkgs, targetPackages
+{ lib, buildPackages, pkgs, targetPackages, writeTextFile
 , darwin, stdenv, callPackage, callPackages, newScope
+, makeSetupHook
 }:
 
 let
-  apple-source-releases = callPackage ../os-specific/darwin/apple-source-releases { };
+  # Open source packages that are built from source
+  appleSourcePackages = callPackage ../os-specific/darwin/apple-source-releases {};
 
   impure-cmds = callPackage ../os-specific/darwin/impure-cmds { };
+
+  # macOS 11.0 SDK
+  apple_sdk_11_0 = callPackage ../os-specific/darwin/apple-sdk-11.0 { };
+
+  # macOS 10.12 SDK
+  apple_sdk_10_12 = callPackage ../os-specific/darwin/apple-sdk {
+    inherit (darwin) darwin-stubs print-reexports;
+  };
+
+  # Pick an SDK
+  apple_sdk = if stdenv.hostPlatform.isAarch64 then apple_sdk_11_0 else apple_sdk_10_12;
+
+  # Pick the source of libraries: either Apple's open source releases, or the
+  # SDK.
+  useAppleSDKLibs = stdenv.hostPlatform.isAarch64;
+
+  chooseLibs = {
+    inherit (
+      if useAppleSDKLibs
+        then apple_sdk
+        else appleSourcePackages
+    ) Libsystem LibsystemCross libcharset libunwind objc4 configd IOKit;
+
+    inherit (
+      if useAppleSDKLibs
+        then apple_sdk.frameworks
+        else appleSourcePackages
+    ) Security;
+  };
+
+  llvmPackages = if stdenv.hostPlatform.isAarch64 then pkgs.llvmPackages_10 else pkgs.llvmPackages_7;
 in
 
-(impure-cmds // apple-source-releases // {
+(impure-cmds // appleSourcePackages // chooseLibs // {
+
+  inherit apple_sdk;
 
   callPackage = newScope (darwin.apple_sdk.frameworks // darwin);
 
@@ -16,20 +51,20 @@ in
     extraBuildInputs = [];
   };
 
-  apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
-    inherit (darwin) darwin-stubs print-reexports;
-  };
-
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (darwin) cctools;
     inherit (pkgs) binutils-unwrapped;
-    inherit (pkgs.llvmPackages_7) llvm clang-unwrapped;
+    inherit (llvmPackages) llvm clang-unwrapped;
   };
 
   binutils = pkgs.wrapBintoolsWith {
+    ## TODO: this looks correct but goes into infinite recursing territory
+    ## if stdenv.targetPlatform != stdenv.hostPlatform
+    ## then pkgs.libcCross
+    ## else pkgs.stdenv.cc.libc
     libc =
-      if stdenv.targetPlatform != stdenv.hostPlatform
-      then pkgs.libcCross
+      if stdenv.targetPlatform.isAarch64 && (stdenv.buildPlatform != stdenv.targetPlatform)
+      then apple_sdk_11_0.Libsystem
       else pkgs.stdenv.cc.libc;
     bintools = darwin.binutils-unwrapped;
   };
@@ -69,7 +104,7 @@ in
 
   iproute2mac = callPackage ../os-specific/darwin/iproute2mac { };
 
-  libobjc = apple-source-releases.objc4;
+  libobjc = pkgs.darwin.objc4;
 
   lsusb = callPackage ../os-specific/darwin/lsusb { };
 
@@ -90,7 +125,10 @@ in
 
   CoreSymbolication = callPackage ../os-specific/darwin/CoreSymbolication { };
 
-  CF = callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
+  # TODO: make swift-corefoundation build with apple_sdk_11_0.Libsystem
+  CF = if useAppleSDKLibs
+    then apple_sdk.frameworks.CoreFoundation
+    else callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
 
   # As the name says, this is broken, but I don't want to lose it since it's a direction we want to go in
   # libdispatch-broken = callPackage ../os-specific/darwin/swift-corelibs/libdispatch.nix { inherit (darwin) apple_sdk_sierra xnu; };
