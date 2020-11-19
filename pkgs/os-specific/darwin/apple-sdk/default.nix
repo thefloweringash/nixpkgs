@@ -107,8 +107,14 @@ let
         fi
 
         local tbd_source=${darwin-stubs}/System/Library/Frameworks/$nested_path/Versions/$current
-        if [ "${name}" != "Kernel" ]; then
+        if [ "${name}" = "Kernel" ]; then
           # The Kernel.framework has headers but no actual library component.
+          echo "Not copying tbd files for Kernel; not a regular framework"
+        elif [ -z "$(echo $tbd_source/*.tbd)" ]; then
+          # TODO: This removes a safety guarantee and effectively makes the
+          # result useless. Only for testing.
+          echo "Not copying tbd files for framework ${name}; no .tbd files found"
+        else
           cp -v $tbd_source/*.tbd .
         fi
 
