@@ -1,4 +1,6 @@
-{ stdenv, binutils-unwrapped, cctools, llvm }:
+{ stdenv, lib, binutils-unwrapped, cctools, llvm
+, withDsymutil ? true
+}:
 
 # Make sure both underlying packages claim to have prepended their binaries
 # with the same targetPrefix.
@@ -37,7 +39,9 @@ stdenv.mkDerivation {
       ln -sf "${cctools}/bin/$i" "$out/bin/$i"
     done
 
-    ln -s ${llvm}/bin/dsymutil $out/bin/dsymutil
+    ${lib.optionalString withDsymutil ''
+      ln -s ${llvm}/bin/dsymutil $out/bin/dsymutil
+    ''}
 
     ln -s ${binutils-unwrapped.out}/share $out/share
 
