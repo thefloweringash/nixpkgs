@@ -46,6 +46,9 @@ in
   darwin-stubs = callPackage ../os-specific/darwin/darwin-stubs { };
 
   print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports { };
+
+  rewrite-tbd = callPackage ../os-specific/darwin/rewrite-tbd { };
+
   sigtool = callPackage ../os-specific/darwin/sigtool { };
 
   autoSignDarwinBinariesHook = makeSetupHook {
