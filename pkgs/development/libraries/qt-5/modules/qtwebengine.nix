@@ -80,9 +80,6 @@ qtModule {
     # Apple has some secret stuff they don't share with OpenBSM
     substituteInPlace src/3rdparty/chromium/base/mac/mach_port_broker.mm \
       --replace "audit_token_to_pid(msg.trailer.msgh_audit)" "msg.trailer.msgh_audit.val[5]"
-
-    substituteInPlace src/3rdparty/chromium/sandbox/mac/BUILD.gn \
-      --replace 'libs = [ "sandbox" ]' 'libs = [ "/usr/lib/libsandbox.1.dylib" ]'
     '');
 
   NIX_CFLAGS_COMPILE = lib.optionals stdenv.cc.isGNU [
@@ -154,7 +151,7 @@ qtModule {
 
   # FIXME These dependencies shouldn't be needed but can't find a way
   # around it. Chromium pulls this in while bootstrapping GN.
-  ++ lib.optionals stdenv.isDarwin (with darwin; with apple_sdk.frameworks; [
+  ++ lib.optionals stdenv.isDarwin (with darwin; with apple_sdk.libs; with apple_sdk.frameworks; [
     libobjc
     cctools
 
@@ -175,6 +172,7 @@ qtModule {
 
     openbsm
     libunwind
+    libsandbox
   ]);
 
   buildInputs = optionals stdenv.isDarwin (with darwin; [
@@ -194,14 +192,7 @@ qtModule {
         shift
       done
     '')
-
-    # For sandbox.h include
-    (runCommand "MacOS_SDK_sandbox.h" {} ''
-      install -Dm444 "${lib.getDev darwin.apple_sdk.sdk}"/include/sandbox.h "$out"/include/sandbox.h
-    '')
   ]);
-
-  __impureHostDeps = optional stdenv.isDarwin "/usr/lib/libsandbox.1.dylib";
 
   dontUseNinjaBuild = true;
   dontUseNinjaInstall = true;

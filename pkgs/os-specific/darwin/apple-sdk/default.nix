@@ -246,6 +246,18 @@ in rec {
         popd >/dev/null
       '';
     };
+
+    libsandbox = stdenv.mkDerivation {
+      name = "apple-lib-sandbox";
+      dontUnpack = true;
+
+      installPhase = ''
+        mkdir -p $out/include $out/lib
+        ln -s ${lib.getDev sdk}/include/sandbox.h $out/include
+        cp ${darwin-stubs}/usr/lib/libsandbox.1.dylib $out/lib
+        ln -s libsandbox.1.dylib $out/lib/libsandbox.dylib
+      '';
+    };
   };
 
   overrides = super: {
