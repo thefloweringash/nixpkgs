@@ -3,9 +3,12 @@
 let
 
   useLLVM = stdenv.hostPlatform.useLLVM or false;
+  darwinCross = stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform);
   bareMetal = stdenv.hostPlatform.parsed.kernel.name == "none";
   inherit (stdenv.hostPlatform) isMusl;
 
+  # TODO: Only minimal build seems to work
+  appleSilicon = stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64;
 in
 
 stdenv.mkDerivation rec {
@@ -14,7 +17,6 @@ stdenv.mkDerivation rec {
   src = fetch pname "1yjqjri753w0fzmxcyz687nvd97sbc9rsqrxzpq720na47hwh3fr";
 
   nativeBuildInputs = [ cmake python3 llvm ];
-  buildInputs = lib.optional stdenv.hostPlatform.isDarwin libcxxabi;
 
   NIX_CFLAGS_COMPILE = [
     "-DSCUDO_DEFAULT_OPTIONS=DeleteSizeMismatch=0:DeallocationTypeMismatch=0"
@@ -24,17 +26,19 @@ stdenv.mkDerivation rec {
     "-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON"
     "-DCMAKE_C_COMPILER_TARGET=${stdenv.hostPlatform.config}"
     "-DCMAKE_ASM_COMPILER_TARGET=${stdenv.hostPlatform.config}"
-  ] ++ lib.optionals (useLLVM || bareMetal || isMusl) [
+  ] ++ lib.optionals (darwinCross) [
+    "-DCMAKE_LIPO=${stdenv.cc.targetPrefix}lipo"
+  ] ++ lib.optionals (useLLVM || darwinCross || bareMetal || isMusl || appleSilicon) [
     "-DCOMPILER_RT_BUILD_SANITIZERS=OFF"
     "-DCOMPILER_RT_BUILD_XRAY=OFF"
     "-DCOMPILER_RT_BUILD_LIBFUZZER=OFF"
     "-DCOMPILER_RT_BUILD_PROFILE=OFF"
-  ] ++ lib.optionals (useLLVM || bareMetal) [
+  ] ++ lib.optionals (useLLVM || darwinCross || bareMetal) [
     "-DCMAKE_C_COMPILER_WORKS=ON"
     "-DCMAKE_CXX_COMPILER_WORKS=ON"
     "-DCOMPILER_RT_BAREMETAL_BUILD=ON"
     "-DCMAKE_SIZEOF_VOID_P=${toString (stdenv.hostPlatform.parsed.cpu.bits / 8)}"
-  ] ++ lib.optionals (useLLVM) [
+  ] ++ lib.optionals (useLLVM || darwinCross) [
     "-DCOMPILER_RT_BUILD_BUILTINS=ON"
     "-DCMAKE_C_FLAGS=-nodefaultlibs"
     #https://stackoverflow.com/questions/53633705/cmake-the-c-compiler-is-not-able-to-compile-a-simple-test-program
@@ -45,7 +49,8 @@ stdenv.mkDerivation rec {
     # The compiler-rt build infrastructure sniffs supported platforms on Darwin
     # and finds i386;x86_64;x86_64h. We only build for x86_64, so linking fails
     # when it tries to use libc++ and libc++api for i386.
-    "-DDARWIN_osx_ARCHS=${stdenv.hostPlatform.parsed.cpu.name}"
+    "-DDARWIN_osx_ARCHS=${stdenv.hostPlatform.darwinArch}"
+    "-DDARWIN_osx_BUILTIN_ARCHS=${stdenv.hostPlatform.darwinArch}"
   ];
 
   outputs = [ "out" "dev" ];
@@ -56,6 +61,9 @@ stdenv.mkDerivation rec {
   ]# ++ lib.optional stdenv.hostPlatform.isMusl ./sanitizers-nongnu.patch
     ++ lib.optional stdenv.hostPlatform.isAarch32 ./compiler-rt-armv7l.patch;
 
+  preConfigure = lib.optionalString darwinCross ''
+    cmakeFlagsArray+=("-DCMAKE_LIPO=$(command -v ${stdenv.cc.targetPrefix}lipo)")
+  '';
 
   # TSAN requires XPC on Darwin, which we have no public/free source files for. We can depend on the Apple frameworks
   # to get it, but they're unfree. Since LLVM is rather central to the stdenv, we patch out TSAN support so that Hydra
@@ -68,7 +76,7 @@ stdenv.mkDerivation rec {
   '' + lib.optionalString stdenv.isDarwin ''
     substituteInPlace cmake/config-ix.cmake \
       --replace 'set(COMPILER_RT_HAS_TSAN TRUE)' 'set(COMPILER_RT_HAS_TSAN FALSE)'
-  '' + lib.optionalString (useLLVM) ''
+  '' + lib.optionalString (useLLVM || darwinCross) ''
     substituteInPlace lib/builtins/int_util.c \
       --replace "#include <stdlib.h>" ""
     substituteInPlace lib/builtins/clear_cache.c \
@@ -80,7 +88,7 @@ stdenv.mkDerivation rec {
   # Hack around weird upsream RPATH bug
   postInstall = lib.optionalString (stdenv.hostPlatform.isDarwin || stdenv.hostPlatform.isWasm) ''
     ln -s "$out/lib"/*/* "$out/lib"
-  '' + lib.optionalString (useLLVM) ''
+  '' + lib.optionalString (useLLVM || darwinCross) ''
     ln -s $out/lib/*/clang_rt.crtbegin-*.o $out/lib/crtbegin.o
     ln -s $out/lib/*/clang_rt.crtend-*.o $out/lib/crtend.o
     ln -s $out/lib/*/clang_rt.crtbegin_shared-*.o $out/lib/crtbeginS.o
