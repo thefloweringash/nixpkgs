@@ -87,6 +87,13 @@ in
     deps = [ pkgs.darwin.print-reexports ];
   } ../os-specific/darwin/print-reexports/setup-hook.sh;
 
+  sigtool = callPackage ../os-specific/darwin/sigtool { };
+
+  autoSignDarwinBinariesHook = makeSetupHook {
+    substitutions = { inherit (pkgs.binutils-unwrapped) targetPrefix; };
+    deps = [ darwin.sigtool ];
+  } ../os-specific/darwin/sigtool/setup-hook.sh;
+
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
   };
