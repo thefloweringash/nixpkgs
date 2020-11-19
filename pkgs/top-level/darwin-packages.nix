@@ -45,7 +45,7 @@ in
 
   darwin-stubs = callPackage ../os-specific/darwin/darwin-stubs { };
 
-  print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports { };
+  print-reexports = callPackage ../os-specific/darwin/print-reexports { };
 
   rewrite-tbd = callPackage ../os-specific/darwin/rewrite-tbd { };
 
@@ -56,6 +56,9 @@ in
     deps = [ darwin.sigtool ];
   } ../os-specific/darwin/sigtool/setup-hook.sh;
 
+  checkReexportsHook = makeSetupHook {
+    deps = [ pkgs.darwin.print-reexports ];
+  } ../os-specific/darwin/print-reexports/setup-hook.sh;
 
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
