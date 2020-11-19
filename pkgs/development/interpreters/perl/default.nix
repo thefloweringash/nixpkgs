@@ -85,9 +85,20 @@ let
         "-Dprefix=${placeholder "out"}"
         "-Dman1dir=${placeholder "out"}/share/man/man1"
         "-Dman3dir=${placeholder "out"}/share/man/man3"
-      ];
+      ] ++ optionals ((stdenv.buildPlatform != stdenv.hostPlatform) && stdenv.hostPlatform.isDarwin) (
+        let byteorder = platform:
+          if platform.is64bit then
+            (if platform.isBigEndian then "87654321" else "12345678")
+          else if platform.is32bit then
+            (if platform.isBigEndian then "4321" else "1234")
+          else throw "Undefined byte order constant for platform ${platform.config}";
+        in [
+          "--host-Dbyteorder=${byteorder stdenv.buildPlatform}"
+          "-Dbyteorder=${byteorder stdenv.hostPlatform}"
+        ]
+      );
 
-    configureScript = optionalString (!crossCompiling) "${stdenv.shell} ./Configure";
+    configureScript = if (!crossCompiling) then "${stdenv.shell} ./Configure" else "${stdenv.shell} ./configure.cross";
 
     dontAddPrefix = !crossCompiling;
 
@@ -149,6 +160,14 @@ let
         install -m755 miniperl $mini/bin/perl
 
         export runtimeArch="$(ls $out/lib/perl5/site_perl/${version})"
+      '' + optionalString (crossCompiling && stdenv.hostPlatform.isDarwin)
+      # TODO: this should work without this hammer, though injecting targetPrefix is annoying.
+      ''
+        ${stdenv.cc.targetPrefix}install_name_tool \
+          -change libperl.dylib $out/lib/perl5/${version}/$runtimeArch/CORE/libperl.dylib \
+          $out/bin/perl
+      '' + optionalString crossCompiling
+      ''
         # wrapProgram should use a runtime-native SHELL by default, but
         # it actually uses a buildtime-native one. If we ever fix that,
         # we'll need to fix this to use a buildtime-native one.
@@ -180,8 +199,13 @@ let
 
     depsBuildBuild = [ buildPackages.stdenv.cc makeWrapper ];
 
+    patches = lib.optional stdenv.hostPlatform.isDarwin [
+      ./cross-darwin.patch
+    ];
+
     postUnpack = ''
       unpackFile ${perl-cross-src}
+      mv perl-cross-${crossVersion}/{configure,configure.cross}
       cp -R perl-cross-${crossVersion}/* perl-${version}/
     '';
 
