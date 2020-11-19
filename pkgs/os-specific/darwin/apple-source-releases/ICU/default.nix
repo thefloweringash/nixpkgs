@@ -1,7 +1,17 @@
-{ appleDerivation }:
+{ appleDerivation, stdenv, buildPackages }:
+
+let
+  platformArch = { parsed, ... }: {
+    armv7a  = "armv7";
+    aarch64 = "arm64";
+    x86_64  = "x86_64";
+  }.${parsed.cpu.name};
+in
 
 appleDerivation {
   patches = [ ./clang-5.patch ];
+
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
 
   postPatch = ''
     substituteInPlace makefile \
@@ -12,9 +22,26 @@ appleDerivation {
       --replace '-install_name $(libdir)' "-install_name $out/lib/" \
       --replace /usr/local/bin/ /bin/ \
       --replace /usr/lib/ /lib/ \
+  '' + stdenv.lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform) ''
+
+    # This looks like a bug in the makefile. It defines ENV_BUILDHOST to
+    # propagate the correct value of CC, CXX, etc, but has the following double
+    # expansion that results in the empty string.
+    substituteInPlace makefile \
+      --replace '$($(ENV_BUILDHOST))' '$(ENV_BUILDHOST)'
   '';
 
-  makeFlags = [ "DSTROOT=$(out)" ];
+  makeFlags = [ "DSTROOT=$(out)" ]
+    ++ stdenv.lib.optionals (stdenv.buildPlatform != stdenv.hostPlatform) [
+      "CROSS_BUILD=YES"
+      "BUILD_TYPE="
+      "RC_ARCHS=${platformArch stdenv.hostPlatform}"
+      "HOSTCC=cc"
+      "HOSTCXX=c++"
+      "CC=${stdenv.cc.targetPrefix}cc"
+      "CXX=${stdenv.cc.targetPrefix}c++"
+      "HOSTISYSROOT="
+    ];
 
   postInstall = ''
     mv $out/usr/local/include $out/include
