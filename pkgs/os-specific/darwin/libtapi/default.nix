@@ -1,17 +1,20 @@
-{ lib, stdenv, fetchFromGitHub, cmake, python3, ncurses }:
+{ lib, stdenv, fetchFromGitHub, pkgsBuildBuild, cmake, python3, ncurses }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "libtapi";
-  version = "1000.10.8"; # determined by looking at VERSION.txt
-
+  version = "1100.0.11";
   src = fetchFromGitHub {
     owner = "tpoechtrager";
     repo = "apple-libtapi";
-    rev = "3cb307764cc5f1856c8a23bbdf3eb49dfc6bea48";
-    sha256 = "1zb10p6xkls8x7wsdwgy9c0v16z97rfkgidii9ffq5rfczgvrhjh";
+    rev = "a66284251b46d591ee4a0cb4cf561b92a0c138d8";
+    sha256 = "1rwxpbfvzh5mcaq8h9ga2b0wkc6r325s50spzrpismzl8b8ahj2s";
   };
 
   sourceRoot = "source/src/llvm";
+
+  # Backported from newer llvm, fixes configure error when cross compiling.
+  # Also means we don't have to manually fix the result with install_name_tool.
+  patches = [ ./disable-rpath.patch ];
 
   nativeBuildInputs = [ cmake python3 ];
 
@@ -19,7 +22,27 @@ stdenv.mkDerivation rec {
   # not allowed for the stdenv.
   buildInputs = [ ncurses ];
 
-  cmakeFlags = [ "-DLLVM_INCLUDE_TESTS=OFF" ];
+  cmakeFlags = [ "-DLLVM_INCLUDE_TESTS=OFF" ]
+    ++ stdenv.lib.optional (stdenv.buildPlatform != stdenv.hostPlatform) [
+      "-DCMAKE_CROSSCOMPILING=True"
+      # This package could probably have a llvm_6 llvm-tblgen and clang-tblgen
+      # provided to reduce some building. This package seems intended to
+      # include all of its dependencies, including enough of LLVM to build the
+      # required tablegens.
+      (
+        let
+          nativeCC = pkgsBuildBuild.stdenv.cc;
+          nativeBintools = nativeCC.bintools.bintools;
+          nativeToolchainFlags = [
+            "-DCMAKE_C_COMPILER=${nativeCC}/bin/${nativeCC.targetPrefix}cc"
+            "-DCMAKE_CXX_COMPILER=${nativeCC}/bin/${nativeCC.targetPrefix}c++"
+            "-DCMAKE_AR=${nativeBintools}/bin/${nativeBintools.targetPrefix}ar"
+            "-DCMAKE_STRIP=${nativeBintools}/bin/${nativeBintools.targetPrefix}strip"
+            "-DCMAKE_RANLIB=${nativeBintools}/bin/${nativeBintools.targetPrefix}ranlib"
+          ];
+        in "-DCROSS_TOOLCHAIN_FLAGS_NATIVE:list=${lib.concatStringsSep ";" nativeToolchainFlags}"
+      )
+    ];
 
   # fixes: fatal error: 'clang/Basic/Diagnostic.h' file not found
   # adapted from upstream
@@ -34,10 +57,6 @@ stdenv.mkDerivation rec {
   buildFlags = [ "clangBasic" "libtapi" ];
 
   installTargets = [ "install-libtapi" "install-tapi-headers" ];
-
-  postInstall = lib.optionalString stdenv.isDarwin ''
-    install_name_tool -id $out/lib/libtapi.dylib $out/lib/libtapi.dylib
-  '';
 
   meta = with lib; {
     description = "Replaces the Mach-O Dynamic Library Stub files in Apple's SDKs to reduce the size";
