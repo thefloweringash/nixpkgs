@@ -1,4 +1,4 @@
-{ lowPrio, newScope, pkgs, stdenv, cmake, gccForLibs
+{ lowPrio, newScope, pkgs, stdenv, CFCrossStdenv,  cmake, gccForLibs
 , libxml2, python3, isl, fetchurl, overrideCC, wrapCCWith, wrapBintoolsWith
 , buildPackages
 , buildLlvmTools # tools, but from the previous stage, for cross
@@ -114,6 +114,22 @@ let
       '' + mkExtraBuildCommands cc;
     };
 
+    cctoolsClangNoLibcxx = wrapCCWith rec {
+      cc = tools.clang-unwrapped;
+      libcxx = null;
+      bintools = wrapBintoolsWith {
+        bintools = pkgs.darwin.binutils-unwrapped;
+      };
+      extraPackages = [
+        targetLlvmLibraries.compiler-rt
+      ];
+      extraBuildCommands = ''
+        echo "-rtlib=compiler-rt" >> $out/nix-support/cc-cflags
+        echo "-B${targetLlvmLibraries.compiler-rt}/lib" >> $out/nix-support/cc-cflags
+        echo "-nostdlib++" >> $out/nix-support/cc-cflags
+      '' + mkExtraBuildCommands cc;
+    };
+
     lldClangNoLibcxx = wrapCCWith rec {
       cc = tools.clang-unwrapped;
       libcxx = null;
@@ -146,6 +162,20 @@ let
       '' + mkExtraBuildCommands cc;
     };
 
+    cctoolsClangNoCompilerRt = wrapCCWith {
+      cc = tools.clang-unwrapped;
+      libcxx = null;
+      bintools = wrapBintoolsWith {
+        bintools = pkgs.darwin.binutils-unwrapped;
+        # XXX: this is a departure from lldClangNoCompilerRt
+        # libc = null; -- only ok with pure libSystem
+      };
+      extraPackages = [ ];
+      extraBuildCommands = ''
+        echo "-nostartfiles" >> $out/nix-support/cc-cflags
+      '';
+    };
+
     lldClangNoCompilerRt = wrapCCWith {
       cc = tools.clang-unwrapped;
       libcxx = null;
@@ -165,31 +195,59 @@ let
     callPackage = newScope (libraries // buildLlvmTools // { inherit stdenv cmake libxml2 python3 isl release_version version fetch; });
   in {
 
-    compiler-rt = callPackage ./compiler-rt.nix ({} //
-      (stdenv.lib.optionalAttrs (stdenv.hostPlatform.useLLVM or false) {
-        stdenv = overrideCC stdenv buildLlvmTools.lldClangNoCompilerRt;
+    compiler-rt = let
+      stdenv_ =
+        if stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)
+          then overrideCC CFCrossStdenv buildLlvmTools.cctoolsClangNoCompilerRt
+        else if stdenv.hostPlatform.useLLVM or false
+          then overrideCC stdenv buildLlvmTools.lldClangNoCompilerRt
+        else null;
+    in callPackage ./compiler-rt.nix ({} //
+      (stdenv.lib.optionalAttrs (stdenv_ != null) {
+        stdenv = stdenv_;
       }));
 
     stdenv = overrideCC stdenv buildLlvmTools.clang;
 
     libcxxStdenv = overrideCC stdenv buildLlvmTools.libcxxClang;
 
-    libcxx = callPackage ./libc++ ({} //
-      (stdenv.lib.optionalAttrs (stdenv.hostPlatform.useLLVM or false) {
-        stdenv = overrideCC stdenv buildLlvmTools.lldClangNoLibcxx;
+    libcxx = let
+      stdenv_ =
+        if stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)
+          then overrideCC CFCrossStdenv buildLlvmTools.cctoolsClangNoLibcxx
+        else if stdenv.hostPlatform.useLLVM or false
+          then overrideCC stdenv buildLlvmTools.lldClangNoLibcxx
+        else null;
+    in callPackage ./libc++ ({} //
+      (stdenv.lib.optionalAttrs (stdenv_ != null) {
+        stdenv = stdenv_;
       }));
 
-    libcxxabi = callPackage ./libc++abi.nix ({} //
-      (stdenv.lib.optionalAttrs (stdenv.hostPlatform.useLLVM or false) {
-        stdenv = overrideCC stdenv buildLlvmTools.lldClangNoLibcxx;
+    libcxxabi = let
+      stdenv_ =
+        if stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)
+          then overrideCC CFCrossStdenv buildLlvmTools.cctoolsClangNoLibcxx
+        else if stdenv.hostPlatform.useLLVM or false
+          then overrideCC stdenv buildLlvmTools.lldClangNoLibcxx
+        else null;
+    in callPackage ./libc++abi.nix ({} //
+      (stdenv.lib.optionalAttrs (stdenv_ != null) {
+        stdenv = stdenv_;
         libunwind = libraries.libunwind;
       }));
 
     openmp = callPackage ./openmp.nix {};
 
-    libunwind = callPackage ./libunwind.nix ({} //
-      (stdenv.lib.optionalAttrs (stdenv.hostPlatform.useLLVM or false) {
-        stdenv = overrideCC stdenv buildLlvmTools.lldClangNoLibcxx;
+    libunwind = let
+      stdenv_ =
+        if stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)
+          then overrideCC stdenv buildLlvmTools.cctoolsClangNoLibcxx
+        else if stdenv.hostPlatform.useLLVM or false
+          then overrideCC stdenv buildLlvmTools.lldClangNoLibcxx
+        else null;
+    in callPackage ./libunwind.nix ({} //
+      (stdenv.lib.optionalAttrs (stdenv_ != null) {
+        stdenv = stdenv_;
       }));
 
   });
