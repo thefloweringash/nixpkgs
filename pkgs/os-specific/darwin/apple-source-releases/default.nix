@@ -147,7 +147,7 @@ let
     inherit sha256;
   };
 
-  appleDerivation_ = name: version: sha256: attrs: stdenv.mkDerivation ({
+  appleDerivation_ = name: version: sha256: stdenv.lib.makeOverridable ({ stdenv }: attrs: stdenv.mkDerivation ({
     inherit version;
     name = "${name}-${version}";
     enableParallelBuilding = true;
@@ -156,13 +156,13 @@ let
     };
   } // (if attrs ? srcs then {} else {
     src  = fetchApple version sha256 name;
-  }) // attrs);
+  }) // attrs)) { inherit stdenv; };
 
   applePackage = namePath: version: sha256:
     let
       name = builtins.elemAt (stdenv.lib.splitString "/" namePath) 0;
       appleDerivation = appleDerivation_ name version sha256;
-      callPackage = pkgs.newScope (packages // pkgs.darwin // { inherit appleDerivation name version; });
+      callPackage = pkgs.newScope (packages // pkgs.darwin // { inherit appleDerivation name version sha256 fetchApple; });
     in callPackage (./. + "/${namePath}");
 
   IOKitSpecs = {
