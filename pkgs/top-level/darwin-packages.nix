@@ -37,7 +37,6 @@ in
   cctools = callPackage ../os-specific/darwin/cctools/port.nix {
     inherit (darwin) libobjc maloader libtapi;
     stdenv = if stdenv.isDarwin then stdenv else pkgs.libcxxStdenv;
-    libcxxabi = pkgs.libcxxabi;
   };
 
   # TODO: remove alias.
