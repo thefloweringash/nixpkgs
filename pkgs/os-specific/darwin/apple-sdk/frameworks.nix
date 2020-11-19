@@ -111,7 +111,7 @@ with frameworks; with libs; {
   Social                  = {};
   # Available with SDK 10.15
   Speech                  = {};
-  SpriteKit               = { inherit AppKit; };
+  SpriteKit               = { inherit AppKit Cocoa; };
   StoreKit                = {};
   SyncServices            = {};
   # Available with SDK 10.15
