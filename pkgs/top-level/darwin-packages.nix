@@ -46,6 +46,13 @@ in
   darwin-stubs = callPackage ../os-specific/darwin/darwin-stubs { };
 
   print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports { };
+  sigtool = callPackage ../os-specific/darwin/sigtool { };
+
+  autoSignDarwinBinariesHook = makeSetupHook {
+    substitutions = { inherit (pkgs.binutils-unwrapped) targetPrefix; };
+    deps = [ darwin.sigtool ];
+  } ../os-specific/darwin/sigtool/setup-hook.sh;
+
 
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
