@@ -91,7 +91,6 @@ stdenv.mkDerivation rec {
     homepage = "http://web.mit.edu/kerberos/";
     license = licenses.mit;
     platforms = platforms.unix ++ platforms.windows;
-    broken = (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64);
   };
 
   passthru.implementation = "krb5";
