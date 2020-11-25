@@ -118,6 +118,15 @@ in rec {
         popd >/dev/null
       '';
     };
+
+    libDER = stdenv.mkDerivation {
+      name = "apple-lib-libDER";
+      dontUnpack = true;
+      installPhase = ''
+        mkdir -p $out/include
+        cp -r ${MacOSX-SDK}/usr/include/libDER $out/include
+      '';
+    };
   };
 
   overrides = super: {};
