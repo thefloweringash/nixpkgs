@@ -246,6 +246,7 @@ in rec {
           installPhase = ''
             mkdir -p $out/bin
             ln -s ${bootstrapTools}/bin/gensig $out/bin
+            ln -s ${bootstrapTools}/bin/codesign $out/bin
           '';
         };
 

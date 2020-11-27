@@ -120,6 +120,7 @@ in rec {
 
       # copy sigtool
       cp -d ${pkgs.darwin.sigtool}/bin/gensig $out/bin
+      cp -d ${pkgs.darwin.sigtool}/bin/codesign $out/bin
 
       cp -d ${darwin.ICU}/lib/libicu*.dylib $out/lib
       cp -d ${zlib.out}/lib/libz.*       $out/lib
@@ -166,7 +167,7 @@ in rec {
       done
 
       for i in $out/bin/*; do
-        if test -x "$i" -a ! -L "$i"; then
+        if test -x "$i" -a ! -L "$i" -a "$(basename $i)" != codesign; then
           echo "Adding @executable_path to rpath in $i"
           ${stdenv.cc.targetPrefix}install_name_tool -add_rpath '@executable_path/..' $i
         fi

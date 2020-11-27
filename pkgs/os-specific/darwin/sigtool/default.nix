@@ -10,15 +10,16 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "thefloweringash";
     repo = "sigtool";
-    rev = "6b5cae59b97b06f69972d5920563f8e03210f6f4";
-    sha256 = "1vai3gfnphs53i8rji19vwk3792jxz5147h534vq1dkfz4a60kn2";
+    rev = "1dafd2ca4651210ba9acce10d279ace22b50fb01";
+    sha256 = "1kcml7n6rsxvgkg6xj8h272ray5x7zpz091k6p5mzcmg74i9x94p";
   };
 
   nativeBuildInputs = [ pkg-config cmake ];
   buildInputs = [ openssl cli11 ];
 
-  installPhase = ''
-    mkdir -p $out/bin
-    cp gensig $out/bin
+  # This is a cmake build, so PWD is not the source.
+  # Upstream (me) asserts the driver script is optional.
+  postInstall = ''
+    cp $NIX_BUILD_TOP/$sourceRoot/codesign.sh $out/bin/codesign
   '';
 }
