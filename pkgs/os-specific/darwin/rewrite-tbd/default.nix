@@ -7,8 +7,8 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "thefloweringash";
     repo = "rewrite-tbd";
-    rev = "688b77bdfed06be0784b56b5515e78c2e5a262fd";
-    sha256 = "0c52fhnb30d0h6v4q192dkk0m8xiwnc9cvrxjji3chxp274yp1k3";
+    rev = "988f29c6ccbca9b883966225263d8d78676da6a3";
+    sha256 = "08sk91zwj6n9x2ymwid2k7y0rwv5b7p6h1b25ipx1dv0i43p6v1a";
   };
 
   nativeBuildInputs = [ cmake pkg-config ];
