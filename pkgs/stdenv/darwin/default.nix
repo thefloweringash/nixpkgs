@@ -9,7 +9,7 @@
   if localSystem.isAarch64 then
     let
       fetch = { file, sha256, executable ? true }: import <nix/fetchurl.nix> {
-        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/2450e95f48314de699083f0020bea424990cf06f/${file}";
+        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/78442970124c069f7e92bc2575eeb6701b123e65/${file}";
         inherit (localSystem) system;
         inherit sha256 executable;
       }; in {
@@ -17,7 +17,7 @@
         bzip2   = fetch { file = "bzip2"; sha256 = "0mv5xckh5r8k1bgbjnvc4l9rx6vfwwq42inf9dxpj40ds0y8i7wy"; };
         mkdir   = fetch { file = "mkdir"; sha256 = "0qrnjvcryjhq3nx8rdxshkl6j3d4hkhjhn97vcwl40q4qggigylz"; };
         cpio    = fetch { file = "cpio";  sha256 = "15xzmzmiy5zq7lrb56ypq3q0x3nlr21gcb4jqkxrpdw9rx56dp04"; };
-        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "1lhnivxd66hhyyacx00gn2d7inqc0c1g855d8lv8nkpdwwjifc3a"; executable = false; };
+        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "0h6bb1iy14q6rsxg8fxsfvhc1l50y2pw6y3g5iqdwrs6n9kc1kar"; executable = false; };
       }
   else
     let
