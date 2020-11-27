@@ -10,9 +10,10 @@ export PATH=$out/bin
 updateInstallName() {
   local path="$1"
 
+  cp "$path" "$path.new"
   install_name_tool -id "$path" "$path.new"
   codesign -f -i "$(basename "$path")" -s - "$path.new"
-  mv -f "$path.unsigned" "$path"
+  mv -f "$path.new" "$path"
 }
 
 find $out
