@@ -28,6 +28,12 @@ let
         then apple_sdk
         else appleSourcePackages
     ) Libsystem LibsystemCross libcharset libunwind objc4 configd IOKit;
+
+    inherit (
+      if useAppleSDKLibs
+        then apple_sdk.frameworks
+        else appleSourcePackages
+    ) Security;
   };
 
   llvmPackages = if stdenv.hostPlatform.isAarch64 then pkgs.llvmPackages_10 else pkgs.llvmPackages_7;
