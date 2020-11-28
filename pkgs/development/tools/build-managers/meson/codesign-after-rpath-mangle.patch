@@ -1,0 +1,14 @@
+diff --git a/mesonbuild/scripts/depfixer.py b/mesonbuild/scripts/depfixer.py
+index 18d70cca9..584ccbb7e 100644
+--- a/mesonbuild/scripts/depfixer.py
++++ b/mesonbuild/scripts/depfixer.py
+@@ -438,6 +438,9 @@ def fix_darwin(fname: str, new_rpath: str, final_path: str, install_name_mapping
+             subprocess.check_call(['install_name_tool', fname] + args,
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL)
++            subprocess.check_call(['codesign', '-f', '-s', '-', fname],
++                                  stdout=subprocess.DEVNULL,
++                                  stderr=subprocess.DEVNULL)
+     except Exception as err:
+         raise SystemExit(err)
+ 

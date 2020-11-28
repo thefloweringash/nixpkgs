@@ -57,7 +57,13 @@ python3.pkgs.buildPythonApplication rec {
     # unsandboxed non-NixOS builds, see:
     # https://github.com/NixOS/nixpkgs/issues/86131#issuecomment-711051774
     ./boost-Do-not-add-system-paths-on-nix.patch
-  ];
+] ++ stdenv.lib.optionals (
+    stdenv.hostPlatform == stdenv.buildPlatform &&
+    stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
+      # Meson rewrites rpaths on install. Projects use post_install hooks to run
+      # installed binaries. The code signature needs to be preserved.
+      ./codesign-after-rpath-mangle.patch
+    ];
 
   setupHook = ./setup-hook.sh;
 
