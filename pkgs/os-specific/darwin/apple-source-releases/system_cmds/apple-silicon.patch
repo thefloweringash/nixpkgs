@@ -1,0 +1,23 @@
+diff -ur a/getty.tproj/main.c b/getty.tproj/main.c
+--- a/getty.tproj/main.c	2008-06-11 03:50:19.000000000 +0900
++++ b/getty.tproj/main.c	2020-12-05 20:51:02.000000000 +0900
+@@ -59,7 +59,6 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <locale.h>
+-#include <libutil.h>
+ #include <setjmp.h>
+ #include <signal.h>
+ #include <stdlib.h>
+diff -ur a/login.tproj/login.c b/login.tproj/login.c
+--- a/login.tproj/login.c	2012-07-28 03:15:50.000000000 +0900
++++ b/login.tproj/login.c	2020-12-05 20:53:42.000000000 +0900
+@@ -946,6 +946,8 @@
+ 		flavor = x86_THREAD_STATE;
+ #elif defined(__arm__)
+ 		flavor = ARM_THREAD_STATE;
++#elif defined(__arm64__)
++		flavor = ARM_THREAD_STATE64;
+ #else
+ #error unsupported architecture
+ #endif

@@ -30,7 +30,11 @@ appleDerivation {
                          "-DAU_SESSION_FLAG_HAS_AUTHENTICATED=0x4000"
                        ] ++ lib.optional (!stdenv.isLinux) " -D__FreeBSD__ ";
 
-  patchPhase = ''
+  patches = stdenv.lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
+    ./apple-silicon.patch
+  ];
+
+  postPatch = ''
     substituteInPlace login.tproj/login.c \
       --replace bsm/audit_session.h bsm/audit.h
     substituteInPlace login.tproj/login_audit.c \
