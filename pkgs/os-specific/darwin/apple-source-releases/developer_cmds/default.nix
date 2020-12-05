@@ -1,5 +1,21 @@
-{ stdenv, appleDerivation, xcbuildHook, llvmPackages }:
+{ stdenv, runCommand, makeWrapper, appleDerivation, xcbuildHook, llvmPackages }:
 
+let
+  # rpcgen calls `cpp` internally. Provide the correct value for -arch.
+  platformArch = { parsed, ... }: {
+    armv7a  = "armv7";
+    aarch64 = "arm64";
+    x86_64  = "x86_64";
+  }.${parsed.cpu.name};
+
+  cppWrapper = runCommand "cpp-wrapper" {
+    nativeBuildInputs = [ makeWrapper ];
+  } ''
+    mkdir -p $out/bin
+    makeWrapper ${llvmPackages.clang-unwrapped}/bin/clang-cpp $out/bin/cpp \
+      --add-flags "-arch ${platformArch stdenv.targetPlatform}"
+  '';
+in
 appleDerivation {
   nativeBuildInputs = [ xcbuildHook ];
 
@@ -12,7 +28,7 @@ appleDerivation {
 
   postPatch = ''
     substituteInPlace rpcgen/rpc_main.c \
-      --replace "/usr/bin/cpp" "${llvmPackages.clang-unwrapped}/bin/clang-cpp"
+      --replace "/usr/bin/cpp" "${cppWrapper}/bin/cpp"
   '';
 
   # temporary install phase until xcodebuild has "install" support
