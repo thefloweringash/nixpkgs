@@ -1,8 +1,16 @@
-{ runCommand, lib, sdks, xcodePlatform, writeText }:
+{ stdenv, runCommand, lib, sdks, xcodePlatform, writeText }:
 
 let
 
   inherit (lib.generators) toPlist;
+
+  platformArch = { parsed, ... }: {
+    armv7a  = "armv7";
+    aarch64 = "arm64";
+    x86_64  = "x86_64";
+  }.${parsed.cpu.name};
+
+  RealArchitectures = [ (platformArch stdenv.targetPlatform) ];
 
   Info = {
     CFBundleIdentifier = "com.apple.platform.${lib.toLower xcodePlatform}";
@@ -17,21 +25,21 @@ let
   # These files are all based off of Xcode spec fies found in
   # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Xcode/Speciications/.
 
-  # Based off of the MacOSX Architectures.xcpsec file. All i386 stuff
-  # is removed because NixPkgs only supports darwin-x86_64.
+  # Based off of the MacOSX Architectures.xcpsec file. All i386 stuff is
+  # removed because NixPkgs only supports x86_64-darwin and aarch64-darwin
   Architectures = [
     {
       Identifier = "Standard";
       Type = "Architecture";
-      Name = "Standard Architectures (64-bit Intel)";
-      RealArchitectures = [ "x86_64" ];
+      Name = "Standard Architectures";
+      inherit RealArchitectures;
       ArchitectureSetting = "ARCHS_STANDARD";
     }
     {
       Identifier = "Universal";
       Type = "Architecture";
-      Name = "Universal (64-bit Intel)";
-      RealArchitectures = [ "x86_64" ];
+      Name = "Universal (64-bit)";
+      inherit RealArchitectures;
       ArchitectureSetting = "ARCHS_STANDARD_32_64_BIT";
     }
     {
@@ -43,8 +51,8 @@ let
     {
       Identifier = "Standard64bit";
       Type = "Architecture";
-      Name = "64-bit Intel";
-      RealArchitectures = [ "x86_64" ];
+      Name = "Standard Architectures (64-bit)";
+      inherit RealArchitectures;
       ArchitectureSetting = "ARCHS_STANDARD_64_BIT";
     }
     {
@@ -53,10 +61,15 @@ let
       Name = "Intel 64-bit";
     }
     {
+      Identifier = "arm64";
+      Type = "Architecture";
+      Name = "arm64";
+    }
+    {
       Identifier = "Standard_Including_64_bit";
       Type = "Architecture";
       Name = "Standard Architectures (including 64-bit)";
-      RealArchitectures = [ "x86_64" ];
+      inherit RealArchitectures;
       ArchitectureSetting = "ARCHS_STANDARD_INCLUDING_64_BIT";
     }
   ];
