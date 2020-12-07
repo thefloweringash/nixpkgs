@@ -21,3 +21,42 @@ diff -ur a/login.tproj/login.c b/login.tproj/login.c
  #else
  #error unsupported architecture
  #endif
+diff -ur a/sysctl.tproj/sysctl.c b/sysctl.tproj/sysctl.c
+--- a/sysctl.tproj/sysctl.c	2010-08-31 10:41:12.000000000 +0900
++++ b/sysctl.tproj/sysctl.c	2020-12-07 20:45:53.000000000 +0900
+@@ -302,20 +302,10 @@
+ 	case CTL_KERN:
+ 		switch (mib[1]) {
+ 		case KERN_PROF:
+-			mib[2] = GPROF_STATE;
+-			size = sizeof state;
+-			if (sysctl(mib, 3, &state, &size, NULL, 0) < 0) {
+-				if (flags == 0)
+-					return;
+-				if (!nflag)
+-					fprintf(stdout, "%s: ", string);
+-				fprintf(stderr,
+-				    "kernel is not compiled for profiling\n");
+-				return;
+-			}
+-			if (!nflag)
+-				fprintf(stdout, "%s: %s\n", string,
+-				    state == GMON_PROF_OFF ? "off" : "running");
++      if (flags == 0)
++        return;
++      fprintf(stderr,
++          "this version of sysctl doesn't support profiling\n");
+ 			return;
+ 		case KERN_VNODE:
+ 		case KERN_FILE:
+diff -ur a/zprint.tproj/zprint.c b/zprint.tproj/zprint.c
+--- a/zprint.tproj/zprint.c	2011-08-19 22:52:54.000000000 +0900
++++ b/zprint.tproj/zprint.c	2020-12-07 20:46:45.000000000 +0900
+@@ -71,7 +71,6 @@
+ #include <mach/mach.h>
+ #include <mach_debug/mach_debug.h>
+ #include <mach/mach_error.h>
+-#include <libutil.h>
+ #include <errno.h>
+ 
+ #define streql(a, b)		(strcmp((a), (b)) == 0)
