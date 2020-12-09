@@ -84,7 +84,7 @@ in lib.init bootStages ++ [
         ++ lib.optional (hostPlatform.config == "x86_64-w64-mingw32") buildPackages.file
         ;
 
-      extraNativeBuildInputsPostStrip = lib.optional (hostPlatform.isAarch64 && hostPlatform.isDarwin)
+      extraNativeBuildInputsPostStrip = lib.optional (hostPlatform.isAarch64 && hostPlatform.isDarwin && !hostPlatform.isiOS)
         buildPackages.darwin.autoSignDarwinBinariesHook;
     });
   })
