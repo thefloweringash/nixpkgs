@@ -1,13 +1,5 @@
 { appleDerivation, stdenv, buildPackages }:
 
-let
-  platformArch = { parsed, ... }: {
-    armv7a  = "armv7";
-    aarch64 = "arm64";
-    x86_64  = "x86_64";
-  }.${parsed.cpu.name};
-in
-
 appleDerivation {
   patches = [ ./clang-5.patch ];
 
@@ -35,7 +27,7 @@ appleDerivation {
     ++ stdenv.lib.optionals (stdenv.buildPlatform != stdenv.hostPlatform) [
       "CROSS_BUILD=YES"
       "BUILD_TYPE="
-      "RC_ARCHS=${platformArch stdenv.hostPlatform}"
+      "RC_ARCHS=${stdenv.hostPlatform.darwinArch}"
       "HOSTCC=cc"
       "HOSTCXX=c++"
       "CC=${stdenv.cc.targetPrefix}cc"

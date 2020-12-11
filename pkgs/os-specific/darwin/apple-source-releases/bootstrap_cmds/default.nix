@@ -1,13 +1,5 @@
 { stdenv, appleDerivation, yacc, flex }:
 
-let
-  platformArch = { parsed, ... }: {
-    armv7a  = "armv7";
-    aarch64 = "arm64";
-    x86_64  = "x86_64";
-  }.${parsed.cpu.name};
-in
-
 appleDerivation {
   nativeBuildInputs = [ yacc flex ];
 
@@ -45,7 +37,7 @@ appleDerivation {
     cp migcom.1 $out/share/man/man1
 
     substituteInPlace $out/bin/mig \
-      --replace 'arch=`/usr/bin/arch`' 'arch=${platformArch stdenv.targetPlatform}' \
+      --replace 'arch=`/usr/bin/arch`' 'arch=${stdenv.targetPlatform.darwinArch}' \
       --replace '/usr/bin/' "" \
       --replace '/bin/rmdir' "rmdir" \
       --replace 'C=''${MIGCC}' "C=cc"

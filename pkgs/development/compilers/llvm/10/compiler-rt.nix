@@ -9,12 +9,6 @@ let
 
   # TODO: Only minimal build seems to work
   appleSilicon = stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64;
-
-  platformArch = { parsed, ... }: {
-    armv7a  = "armv7";
-    aarch64 = "arm64";
-    x86_64  = "x86_64";
-  }.${parsed.cpu.name};
 in
 
 stdenv.mkDerivation rec {
@@ -55,8 +49,8 @@ stdenv.mkDerivation rec {
     # The compiler-rt build infrastructure sniffs supported platforms on Darwin
     # and finds i386;x86_64;x86_64h. We only build for x86_64, so linking fails
     # when it tries to use libc++ and libc++api for i386.
-    "-DDARWIN_osx_ARCHS=${platformArch stdenv.hostPlatform}"
-    "-DDARWIN_osx_BUILTIN_ARCHS=${platformArch stdenv.hostPlatform}"
+    "-DDARWIN_osx_ARCHS=${stdenv.hostPlatform.darwinArch}"
+    "-DDARWIN_osx_BUILTIN_ARCHS=${stdenv.hostPlatform.darwinArch}"
   ];
 
   outputs = [ "out" "dev" ];

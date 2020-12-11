@@ -316,16 +316,9 @@ stdenv.mkDerivation {
       substituteAll ${../wrapper-common/utils.bash} $out/nix-support/utils.bash
     ''
 
-    + optionalString stdenv.targetPlatform.isDarwin (
-      let
-        platformArch = { parsed, ... }: {
-          armv7a  = "armv7";
-          aarch64 = "arm64";
-          x86_64  = "x86_64";
-        }.${parsed.cpu.name};
-      in ''
-        echo "-arch ${platformArch targetPlatform}" >> $out/nix-support/libc-ldflags
-      '')
+    + optionalString stdenv.targetPlatform.isDarwin ''
+      echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/libc-ldflags
+    ''
 
     ##
     ## Extra custom steps
