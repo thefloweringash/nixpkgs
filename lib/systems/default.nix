@@ -116,6 +116,11 @@ rec {
       darwinSdkVersion = final.sdkVer or "10.12";
       darwinMinVersion = final.darwinSdkVersion;
 
+      darwinArch = {
+        armv7a  = "armv7";
+        aarch64 = "arm64";
+      }.${final.parsed.cpu.name} or final.parsed.cpu.name;
+
       emulator = pkgs: let
         qemu-user = pkgs.qemu.override {
           smartcardSupport = false;
