@@ -231,6 +231,12 @@ rec {
     useiOSPrebuilt = true;
   };
 
+  aarch64-darwin = {
+    config = "aarch64-apple-darwin";
+    xcodePlatform = "MacOSX";
+    platform = {};
+  };
+
   #
   # Windows
   #
