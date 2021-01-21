@@ -118,6 +118,7 @@ let
       gccForLibs = null; # prevent cc-wrapper from taking libs from gcc
       bintools = wrapBintoolsWith {
         bintools = pkgs.darwin.binutils-unwrapped;
+        inherit (pkgs.darwin) postLinkSignHook signingUtils;
       };
       extraPackages = [
         targetLlvmLibraries.compiler-rt
@@ -169,6 +170,7 @@ let
         bintools = pkgs.darwin.binutils-unwrapped;
         # XXX: this is a departure from lldClangNoCompilerRt
         # libc = null; -- only ok with pure libSystem
+        inherit (pkgs.darwin) postLinkSignHook signingUtils;
       };
       extraPackages = [ ];
       extraBuildCommands = ''
