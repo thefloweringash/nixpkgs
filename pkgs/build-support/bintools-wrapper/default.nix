@@ -14,6 +14,9 @@
 , extraPackages ? [], extraBuildCommands ? ""
 , buildPackages ? {}
 , useMacosReexportHack ? false
+
+# Darwin code signing support utilities
+, postLinkSignHook ? null, sigtool ? null
 }:
 
 with lib;
@@ -316,6 +319,24 @@ stdenv.mkDerivation {
 
     + optionalString stdenv.targetPlatform.isDarwin ''
       echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/libc-ldflags
+    ''
+
+    ##
+    ## Code signing on Apple Silicon
+    ##
+    + optionalString (targetPlatform.isDarwin && targetPlatform.isAarch64) ''
+      echo 'source ${postLinkSignHook}' >> $out/nix-support/post-link-hook
+
+      export sigtool=${sigtool}
+
+      wrap \
+        ${targetPrefix}install_name_tool \
+        ${./darwin-install_name_tool-wrapper.sh} \
+        "${bintools_bin}/bin/${targetPrefix}install_name_tool"
+
+      wrap \
+        ${targetPrefix}strip ${./darwin-strip-wrapper.sh} \
+        "${bintools_bin}/bin/${targetPrefix}strip"
     ''
 
     ##

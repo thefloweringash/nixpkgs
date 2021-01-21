@@ -65,6 +65,7 @@ in
       then apple_sdk_11_0.Libsystem
       else pkgs.stdenv.cc.libc;
     bintools = darwin.binutils-unwrapped;
+    inherit (darwin) postLinkSignHook sigtool;
   };
 
   cctools = callPackage ../os-specific/darwin/cctools/port.nix {
