@@ -20,9 +20,10 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ cmake ];
 
-  checkInputs = [ boost python ];
+  checkInputs = lib.optionals doCheck [ boost python ];
 
-  doCheck = true;
+  # Avoid a python dependency on Apple Silicon
+  doCheck = ! (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64);
 
   preConfigure = ''
     rm -rfv extern/googletest
