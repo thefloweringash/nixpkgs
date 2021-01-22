@@ -259,9 +259,9 @@ stdenv.mkDerivation {
         # building. However it seems to be essential on aarch64-darwin and
         # required for bootstrapping.
         optionals stdenv.targetPlatform.isAarch64 [
-          "-macosx_version_min ${stdenv.minSdkVersion or "10.12"}"
+          "-macosx_version_min ${stdenv.macosVersionMin or "10.12"}"
         ] ++
-        [ "-sdk_version ${stdenv.appleSdkVersion or "10.12"}" ] ++
+        [ "-sdk_version ${if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12"}" ] ++
         # Ensure consistent LC_VERSION_MIN_MACOSX and remove LC_UUID.
         [ "-no_uuid" ];
       in ''
