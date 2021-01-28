@@ -110,9 +110,7 @@ rec {
       darwinArch = {
         armv7a  = "armv7";
         aarch64 = "arm64";
-        x86_64  = "x86_64";
-        i686 = "i686";
-      }.${final.parsed.cpu.name};
+      }.${final.parsed.cpu.name} or final.parsed.cpu.name;
 
       emulator = pkgs: let
         qemu-user = pkgs.qemu.override {
