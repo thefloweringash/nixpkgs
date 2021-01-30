@@ -33,7 +33,7 @@ import ./default.nix {
 
   # Note: the version MUST be one version prior to the version we're
   # building
-  bootstrapVersion = "1.48.0";
+  bootstrapVersion = if stdenv.buildPlatform.system == "aarch64-darwin" then "1.49.0" else "1.48.0"; # TODO: remove with next release
 
   # fetch hashes by running `print-hashes.sh ${bootstrapVersion}`
   bootstrapHashes = {
@@ -45,6 +45,7 @@ import ./default.nix {
     aarch64-unknown-linux-gnu = "c4769418d8d89f432e4a3a21ad60f99629e4b13bbfc29aef7d9d51c4e8ee8a8a";
     aarch64-unknown-linux-musl = "ac4de580a28e45a9773b389b296d13bfeeb08263cb1f8343859577a54940dae9";
     x86_64-apple-darwin = "20e727cad10f43e3abcedb2a80979ae26923038e0e8a855e8a783da255054113";
+    aarch64-apple-darwin = "10j0aspswnzryfs73kjd366glnaipvd27fkjnq3rrpbkdyg6hzff";
     powerpc64le-unknown-linux-gnu = "e6457a0214f3b1b04bd5b2618bba7e3826e254216420dede2971b571a1c13bb1";
   };
 
