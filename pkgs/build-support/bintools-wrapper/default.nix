@@ -253,22 +253,6 @@ stdenv.mkDerivation {
       fi
     '')
 
-    + optionalString stdenv.targetPlatform.isMacOS (
-      let flags =
-        # TODO: this causes a warning which will prevent things like Ruby from
-        # building. However it seems to be essential on aarch64-darwin and
-        # required for bootstrapping.
-        optionals stdenv.targetPlatform.isAarch64 [
-          "-macosx_version_min ${stdenv.macosVersionMin or "10.12"}"
-        ] ++
-        [ "-sdk_version ${if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12"}" ] ++
-        # Ensure consistent LC_VERSION_MIN_MACOSX and remove LC_UUID.
-        [ "-no_uuid" ];
-      in ''
-        echo "${concatStringsSep " " flags}" >> $out/nix-support/libc-ldflags-before
-      ''
-    )
-
     ##
     ## User env support
     ##
@@ -318,6 +302,14 @@ stdenv.mkDerivation {
       done
     ''
 
+    ###
+    ### Remove LC_UUID and set -arch
+    ###
+    + optionalString stdenv.targetPlatform.isDarwin ''
+      echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/libc-ldflags
+      echo "-no_uuid" >> $out/nix-support/libc-ldflags-before
+    ''
+
     + ''
       for flags in "$out/nix-support"/*flags*; do
         substituteInPlace "$flags" --replace $'\n' ' '
@@ -328,9 +320,26 @@ stdenv.mkDerivation {
       substituteAll ${../wrapper-common/utils.bash} $out/nix-support/utils.bash
     ''
 
-    + optionalString stdenv.targetPlatform.isDarwin ''
-      echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/libc-ldflags
-    ''
+    ###
+    ### Ensure consistent LC_VERSION_MIN_MACOSX
+    ###
+    + optionalString stdenv.targetPlatform.isDarwin (
+      let
+        darwinPlatform = with stdenv.targetPlatform;
+          if isMacOS then "macos"
+          else if isiOS then "ios"
+          else throw "unknown darwin platform";
+
+        # TODO: these only support the nix macos sdk, not Xcode.
+        sdkVersion = if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12";
+        minVersion = if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12";
+      in ''
+        export darwinPlatform=${darwinPlatform}
+        export darwinMinVersion=${minVersion}
+        export darwinSdkVersion=${sdkVersion}
+        substituteAll ${./add-darwin-ldflags-before.sh} $out/nix-support/add-local-ldflags-before.sh
+      ''
+    )
 
     ##
     ## Code signing on Apple Silicon

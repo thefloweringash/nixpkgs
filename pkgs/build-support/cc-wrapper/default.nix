@@ -479,9 +479,16 @@ stdenv.mkDerivation {
       substituteAll ${../wrapper-common/utils.bash} $out/nix-support/utils.bash
     ''
 
-    + optionalString stdenv.targetPlatform.isDarwin ''
-      echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/cc-cflags
-    ''
+    + optionalString stdenv.targetPlatform.isDarwin (
+      let
+        darwinPlatform = with stdenv.targetPlatform;
+          if isMacOS then "macos"
+          else if isiOS then "ios"
+          else throw "unknown platform";
+        minDeploymentTarget = if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12";
+      in ''
+        echo "-arch ${targetPlatform.darwinArch} -m${darwinPlatform}-version-min=${minDeploymentTarget}" >> $out/nix-support/cc-cflags-before
+      '')
 
     ##
     ## Extra custom steps

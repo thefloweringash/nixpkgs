@@ -63,6 +63,12 @@ fi
 
 source @out@/nix-support/add-hardening.sh
 
+# These flags *must not* be pulled up to -Wl, flags, so they can't go in
+# add-flags.sh.
+if [ -e @out@/nix-support/add-local-ldflags-before.sh ]; then
+    source @out@/nix-support/add-local-ldflags-before.sh
+fi
+
 extraAfter=()
 extraBefore=(${hardeningLDFlags[@]+"${hardeningLDFlags[@]}"})
 
