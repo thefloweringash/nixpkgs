@@ -5,7 +5,6 @@
 , bootstrapHashes
 , selectRustPackage
 , rustcPatches ? []
-, llvmBootstrapForDarwin
 , llvmShared
 , llvmSharedForBuild
 , llvmSharedForHost
@@ -15,7 +14,6 @@
 , buildPackages
 , newScope, callPackage
 , CoreFoundation, Security
-, pkgsBuildTarget, pkgsBuildBuild
 , makeRustPlatform
 }: rec {
   # https://doc.rust-lang.org/reference/conditional-compilation.html#target_arch
@@ -86,11 +84,6 @@
 
         # Use boot package set to break cycle
         rustPlatform = bootRustPlatform;
-      } // lib.optionalAttrs (stdenv.cc.isClang && stdenv.hostPlatform == stdenv.buildPlatform) {
-        stdenv = llvmBootstrapForDarwin.stdenv;
-        pkgsBuildBuild = pkgsBuildBuild // { targetPackages.stdenv = llvmBootstrapForDarwin.stdenv; };
-        pkgsBuildHost = pkgsBuildBuild // { targetPackages.stdenv = llvmBootstrapForDarwin.stdenv; };
-        pkgsBuildTarget = pkgsBuildTarget // { targetPackages.stdenv = llvmBootstrapForDarwin.stdenv; };
       });
       rustfmt = self.callPackage ./rustfmt.nix { inherit Security; };
       cargo = self.callPackage ./cargo.nix {
