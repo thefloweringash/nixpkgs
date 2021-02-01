@@ -485,7 +485,7 @@ stdenv.mkDerivation {
           if isMacOS then "macos"
           else if isiOS then "ios"
           else throw "unknown platform";
-        minDeploymentTarget = if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12";
+        minDeploymentTarget = if stdenv.targetPlatform.isAarch64 then "11.0" else "10.12";
       in ''
         echo "-arch ${targetPlatform.darwinArch} -m${darwinPlatform}-version-min=${minDeploymentTarget}" >> $out/nix-support/cc-cflags-before
       '')

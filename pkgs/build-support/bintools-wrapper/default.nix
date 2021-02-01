@@ -331,8 +331,8 @@ stdenv.mkDerivation {
           else throw "unknown darwin platform";
 
         # TODO: these only support the nix macos sdk, not Xcode.
-        sdkVersion = if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12";
-        minVersion = if stdenv.targetPlatform.isAarch64 then "10.16" else "10.12";
+        sdkVersion = if stdenv.targetPlatform.isAarch64 then "11.0" else "10.12";
+        minVersion = if stdenv.targetPlatform.isAarch64 then "11.0" else "10.12";
       in ''
         export darwinPlatform=${darwinPlatform}
         export darwinMinVersion=${minVersion}
