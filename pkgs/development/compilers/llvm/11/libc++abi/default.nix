@@ -1,6 +1,11 @@
 { lib, stdenv, cmake, fetch, libcxx, libunwind, llvm, version
 , enableShared ? !stdenv.hostPlatform.isStatic
+, standalone ? false
 }:
+
+let
+  darwinCross = stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform);
+in
 
 stdenv.mkDerivation {
   pname = "libc++abi";
@@ -31,7 +36,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ cmake ];
   buildInputs = lib.optional (!stdenv.isDarwin && !stdenv.isFreeBSD && !stdenv.hostPlatform.isWasm) libunwind;
 
-  cmakeFlags = lib.optionals (stdenv.hostPlatform.useLLVM or false) [
+  cmakeFlags = lib.optionals ((stdenv.hostPlatform.useLLVM or false) || darwinCross || standalone) [
     "-DLLVM_ENABLE_LIBCXX=ON"
     "-DLIBCXXABI_USE_LLVM_UNWINDER=ON"
   ] ++ lib.optionals stdenv.hostPlatform.isWasm [
@@ -48,7 +53,7 @@ stdenv.mkDerivation {
         # the magic combination of necessary CMake variables
         # if you fancy a try, take a look at
         # https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling
-        install_name_tool -id $out/$file $file
+        ${stdenv.cc.targetPrefix}install_name_tool -id $out/$file $file
       done
       make install
       install -d 755 $out/include
