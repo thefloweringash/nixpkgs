@@ -1,4 +1,5 @@
 { lib, stdenv, fetch, cmake, libxml2, llvm, version, clang-tools-extra_src, python3, lld
+, buildPackages
 , fixDarwinDylibNames
 , enableManpages ? false
 }:
@@ -19,7 +20,7 @@ let
       mv clang-tools-extra-* $sourceRoot/tools/extra
     '';
 
-    nativeBuildInputs = [ cmake python3 lld ]
+    nativeBuildInputs = [ cmake python3 buildPackages.llvmPackages_11.lld ]
       ++ lib.optional enableManpages python3.pkgs.sphinx
       ++ lib.optional stdenv.hostPlatform.isDarwin fixDarwinDylibNames;
 
@@ -34,6 +35,10 @@ let
       "-DSPHINX_OUTPUT_MAN=ON"
       "-DSPHINX_OUTPUT_HTML=OFF"
       "-DSPHINX_WARNINGS_AS_ERRORS=OFF"
+    ] ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+      "-DLLVM_CONFIG_PATH=${llvm}/bin/llvm-config-native"
+      "-DLLVM_TABLEGEN_EXE=${buildPackages.llvm_11}/bin/llvm-tblgen"
+      "-DCLANG_TABLEGEN=${buildPackages.llvmPackages_11.clang-unwrapped.tablegen}/bin/clang-tblgen"
     ];
 
     patches = [
@@ -55,7 +60,7 @@ let
         --replace "NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB" FALSE
     '';
 
-    outputs = [ "out" "lib" "python" ];
+    outputs = [ "out" "lib" "python" "tablegen" ];
 
     # Clang expects to find LLVMgold in its own prefix
     postInstall = ''
@@ -79,6 +84,9 @@ let
       fi
       mv $out/share/clang/*.py $python/share/clang
       rm $out/bin/c-index-test
+
+      mkdir -p $tablegen/bin
+      cp bin/clang-tblgen $tablegen/bin
     '';
 
     passthru = {
