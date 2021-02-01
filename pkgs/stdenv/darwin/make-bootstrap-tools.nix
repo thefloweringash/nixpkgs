@@ -7,7 +7,7 @@ in
 with pkgs;
 
 let
-  llvmPackageSet = if stdenv.hostPlatform.isAarch64 then "llvmPackages_10" else "llvmPackages_7";
+  llvmPackageSet = if stdenv.hostPlatform.isAarch64 then "llvmPackages_11" else "llvmPackages_7";
   llvmPackages = pkgs."${llvmPackageSet}";
   storePrefixLen = builtins.stringLength builtins.storeDir;
 in rec {
