@@ -5,15 +5,15 @@
   if localSystem.isAarch64 then
     let
       fetch = { file, sha256, executable ? true }: import <nix/fetchurl.nix> {
-        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/78442970124c069f7e92bc2575eeb6701b123e65/${file}";
+        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/bf222dab3a170a9fdad53ce488e79f5e5c2c8f92/${file}";
         inherit (localSystem) system;
         inherit sha256 executable;
       }; in {
-        sh      = fetch { file = "sh";    sha256 = "0vl2j143msgk8c6cnfwqiv50i6x60zm0x3ia2264fannl8qnrm7g"; };
-        bzip2   = fetch { file = "bzip2"; sha256 = "0mv5xckh5r8k1bgbjnvc4l9rx6vfwwq42inf9dxpj40ds0y8i7wy"; };
-        mkdir   = fetch { file = "mkdir"; sha256 = "0qrnjvcryjhq3nx8rdxshkl6j3d4hkhjhn97vcwl40q4qggigylz"; };
-        cpio    = fetch { file = "cpio";  sha256 = "15xzmzmiy5zq7lrb56ypq3q0x3nlr21gcb4jqkxrpdw9rx56dp04"; };
-        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "0h6bb1iy14q6rsxg8fxsfvhc1l50y2pw6y3g5iqdwrs6n9kc1kar"; executable = false; };
+        sh      = fetch { file = "sh";    sha256 = "0hhv8c69s0pnf2p30ylfyjjzjymswy0hlhz7qpkyk7gfzf95j49i"; };
+        bzip2   = fetch { file = "bzip2"; sha256 = "04xg7izqbwzgdnrfjn46afqidz4xr8m87iwjavqmhdj1z5bwckj3"; };
+        mkdir   = fetch { file = "mkdir"; sha256 = "00l9fhq8qyfy4pj7whpwlmx22lqqh440v0gi1c07rk5q51376wh0"; };
+        cpio    = fetch { file = "cpio";  sha256 = "10vg1k8iq6ibsmfs3g9bncz3mkakxv3zb7yrhlnc5474sfma56df"; };
+        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "1a3qz67gxvb7ym2c03s532nbf0cpg39n7b485dlvwdj3qhzq1rqb"; executable = false; };
       }
   else
     let
@@ -36,13 +36,13 @@ let
   inherit (localSystem) system;
 
   # Bootstrap version needs to be known to reference headers included in the bootstrap tools
-  bootstrapLlvmVersion = if localSystem.isAarch64 then "10.0.1" else "7.1.0";
+  bootstrapLlvmVersion = if localSystem.isAarch64 then "11.0.1" else "7.1.0";
 
   useAppleSDKLibs = localSystem.isAarch64;
   haveKRB5 = localSystem.isx86_64;
 
   # final toolchain is injected into llvmPackages_${finalLlvmVersion}
-  finalLlvmVersion = if localSystem.isAarch64 then "10" else "7";
+  finalLlvmVersion = if localSystem.isAarch64 then "11" else "7";
   finalLlvmPackages = "llvmPackages_${finalLlvmVersion}";
 
   commonImpureHostDeps = [
