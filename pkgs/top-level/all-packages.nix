@@ -11626,7 +11626,7 @@ in
 
   autobuild = callPackage ../development/tools/misc/autobuild { };
 
-  autoconf = autoconf270;
+  autoconf = if (stdenv.targetPlatform.isAarch64 && stdenv.targetPlatform.isDarwin) then autoconf271 else autoconf270;
 
   autoconf-archive = callPackage ../development/tools/misc/autoconf-archive { };
 
