@@ -42,6 +42,11 @@ stdenv.mkDerivation rec {
       substituteInPlace tests/shar-2 --replace '${shar_sub}' '${shar_sub} -s submitter'
 
       substituteInPlace intl/Makefile.in --replace "AR = ar" ""
+
+      for i in src/*-opts.h; do
+        substituteInPlace "$i" \
+          --replace 'char const * const program_name' 'extern char const * const program_name'
+      done
     '';
 
   doCheck = true;
