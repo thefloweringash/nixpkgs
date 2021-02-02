@@ -1,4 +1,4 @@
-{ lib, stdenv, fetchurl }:
+{ lib, stdenv, fetchurl, fetchpatch }:
 
 let
   version = "2.13";
@@ -9,6 +9,13 @@ in stdenv.mkDerivation {
   src = fetchurl {
     url = "mirror://gnu/cpio/${name}.tar.bz2";
     sha256 = "0vbgnhkawdllgnkdn6zn1f56fczwk0518krakz2qbwhxmv2vvdga";
+  };
+
+  # Unreleased upstream patch fixing duplicate definition of program_name,
+  # which may fail to link. Observed on aarch64-darwin.
+  patches = fetchpatch {
+    url = "https://git.savannah.gnu.org/cgit/cpio.git/patch/?id=641d3f489cf6238bb916368d4ba0d9325a235afb";
+    sha256 = "1ffawzxjw72kzpdwffi2y7pvibrmwf4jzrxdq9f4a75q6crl66iq";
   };
 
   preConfigure = if stdenv.isCygwin then ''
