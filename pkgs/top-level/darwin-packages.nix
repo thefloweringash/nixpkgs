@@ -36,7 +36,7 @@ let
     ) Security;
   };
 
-  llvmPackages = if stdenv.hostPlatform.isAarch64 then pkgs.llvmPackages_10 else pkgs.llvmPackages_7;
+  llvmPackages = if stdenv.targetPlatform.isAarch64 then pkgs.llvmPackages_11 else pkgs.llvmPackages_7;
 in
 
 (appleSourcePackages // chooseLibs // {
