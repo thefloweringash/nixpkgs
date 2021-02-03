@@ -63,12 +63,6 @@ fi
 
 source @out@/nix-support/add-hardening.sh
 
-# These flags *must not* be pulled up to -Wl, flags, so they can't go in
-# add-flags.sh.
-if [ -e @out@/nix-support/add-local-ldflags-before.sh ]; then
-    source @out@/nix-support/add-local-ldflags-before.sh
-fi
-
 extraAfter=()
 extraBefore=(${hardeningLDFlags[@]+"${hardeningLDFlags[@]}"})
 
@@ -83,6 +77,14 @@ if [ -z "${NIX_LDFLAGS_SET_@suffixSalt@:-}" ]; then
 fi
 
 extraAfter+=($NIX_LDFLAGS_AFTER_@suffixSalt@)
+
+# These flags *must not* be pulled up to -Wl, flags, so they can't go in
+# add-flags.sh. They must always be set, so must not be disabled by
+# NIX_LDFLAGS_SET.
+if [ -e @out@/nix-support/add-local-ldflags-before.sh ]; then
+    source @out@/nix-support/add-local-ldflags-before.sh
+fi
+
 
 # Specify the target emulation if nothing is passed in ("-m" overrides this
 # environment variable). Ensures we never blindly fallback on targeting the host

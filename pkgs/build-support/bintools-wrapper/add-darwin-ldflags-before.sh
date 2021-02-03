@@ -17,12 +17,14 @@
 # The following adds flags for whichever properties have not already been
 # provided.
 
-
 havePlatformVersionFlag=
 haveDarwinSDKVersion=
 haveDarwinPlatformVersion=
 
-for p in ${params+"${params[@]}"}; do
+n=0
+nParams=${#params[@]}
+while (( n < nParams )); do
+    p=${params[n]}
     case "$p" in
         -macos_version_min|-ios_version_min)
             haveDarwinPlatformVersion=1
@@ -34,8 +36,12 @@ for p in ${params+"${params[@]}"}; do
 
         -platform_version)
             havePlatformVersionFlag=1
+            if [ "${params[n+3]-}" = 0.0.0 ]; then
+                params[n+3]=@darwinSdkVersion@
+            fi
             ;;
     esac
+    n=$((n + 1))
 done
 
 # If the caller has set -platform_version, trust they're doing the right thing.
@@ -43,12 +49,12 @@ done
 if [ ! "$havePlatformVersionFlag" ]; then
     if [ ! "$haveDarwinSDKVersion" ] && [ ! "$haveDarwinPlatformVersion" ]; then
         # Nothing provided. Use the modern "-platform_version" to set both.
-        NIX_LDFLAGS_BEFORE_@suffixSalt@="-platform_version @darwinPlatform@ @darwinMinVersion@ @darwinSdkVersion@ $NIX_LDFLAGS_BEFORE_@suffixSalt@"
+        extraBefore+=(-platform_version @darwinPlatform@ @darwinMinVersion@ @darwinSdkVersion@)
     elif [ ! "$haveDarwinSDKVersion" ]; then
         # Add missing sdk version
-        NIX_LDFLAGS_BEFORE_@suffixSalt@="-sdk_version @darwinSdkVersion@ $NIX_LDFLAGS_BEFORE_@suffixSalt@"
+        extraBefore+=(-sdk_version @darwinSdkVersion@)
     elif [ ! "$haveDarwinPlatformVersion" ]; then
         # Add missing platform version
-        NIX_LDFLAGS_BEFORE_@suffixSalt@="-@darwinPlatform@_version_min @darwinSdkVersion@ $NIX_LDFLAGS_BEFORE_@suffixSalt@"
+        extraBefore+=(-@darwinPlatform@_version_min @darwinSdkVersion@)
     fi
 fi
