@@ -1,4 +1,4 @@
-{ lib, stdenv, fetch, cmake, libxml2, llvm, version, clang-tools-extra_src, python3, lld
+{ lib, stdenv, fetch, fetchpatch, cmake, libxml2, llvm, version, clang-tools-extra_src, python3, lld
 , buildPackages
 , fixDarwinDylibNames
 , enableManpages ? false
@@ -44,6 +44,19 @@ let
     patches = [
       ./purity.patch
       # https://reviews.llvm.org/D51899
+
+      # Revert: [Driver] Default to -fno-common for all targets
+      # https://reviews.llvm.org/D75056
+      #
+      # Maintains compatibility with packages that haven't been fixed yet, and
+      # matches gcc10's configuration in nixpkgs.
+      (fetchpatch {
+        revert = true;
+        url = "https://github.com/llvm/llvm-project/commit/0a9fc9233e172601e26381810d093e02ef410f65.diff";
+        stripLen = 1;
+        excludes = [ "docs/*" "test/*" ];
+        sha256 = "0gxgmi0qbm89mq911dahallhi8m6wa9vpklklqmxafx4rplrr8ph";
+      })
     ];
 
     postPatch = ''
