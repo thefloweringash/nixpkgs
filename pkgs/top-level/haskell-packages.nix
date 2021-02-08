@@ -60,6 +60,15 @@ in {
       minimal = true;
     };
 
+    ghc8103Binary = callPackage ../development/compilers/ghc/8.10.3-binary.nix {
+      llvmPackages = pkgs.llvmPackages_11;
+    };
+
+    ghc8103BinaryMinimal = callPackage ../development/compilers/ghc/8.10.3-binary.nix {
+      llvmPackages = pkgs.llvmPackages_11;
+      minimal = true;
+    };
+
     ghc865 = callPackage ../development/compilers/ghc/8.6.5.nix {
       bootPkgs = packages.ghc822Binary;
       inherit (buildPackages.python3Packages) sphinx;
@@ -183,6 +192,18 @@ in {
     ghc8102BinaryMinimal = callPackage ../development/haskell-modules {
       buildHaskellPackages = bh.packages.ghc8102BinaryMinimal;
       ghc = bh.compiler.ghc8102BinaryMinimal;
+      compilerConfig = callPackage ../development/haskell-modules/configuration-ghc-8.10.x.nix { };
+      packageSetConfig = bootstrapPackageSet;
+    };
+    ghc8103Binary = callPackage ../development/haskell-modules {
+      buildHaskellPackages = bh.packages.ghc8103Binary;
+      ghc = bh.compiler.ghc8103Binary;
+      compilerConfig = callPackage ../development/haskell-modules/configuration-ghc-8.10.x.nix { };
+      packageSetConfig = bootstrapPackageSet;
+    };
+    ghc8103BinaryMinimal = callPackage ../development/haskell-modules {
+      buildHaskellPackages = bh.packages.ghc8103BinaryMinimal;
+      ghc = bh.compiler.ghc8103BinaryMinimal;
       compilerConfig = callPackage ../development/haskell-modules/configuration-ghc-8.10.x.nix { };
       packageSetConfig = bootstrapPackageSet;
     };
