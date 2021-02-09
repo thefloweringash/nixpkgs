@@ -377,6 +377,13 @@ rec {
     };
   };
 
+  apple-m1 = {
+    gcc = {
+      arch = "armv8.3-a+crypto+sha2+aes+crc+fp16+lse+simd+ras+rdm+rcpc";
+      cpu = "apple-a13";
+    };
+  };
+
   ##
   ## MIPS
   ##
@@ -497,7 +504,10 @@ rec {
         else if lib.versionOlder version "6" then sheevaplug
         else if lib.versionOlder version "7" then raspberrypi
         else armv7l-hf-multiplatform
-    else if platform.isAarch64 then aarch64-multiplatform
+
+    else if platform.isAarch64 then
+      if platform.isDarwin then apple-m1
+      else aarch64-multiplatform
 
     else if platform.isRiscV then riscv-multiplatform
 
