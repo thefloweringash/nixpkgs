@@ -17,7 +17,7 @@ stdenvNoCC.mkDerivation {
     "platform" "protocols" "pthread" "rpc" "rpcsvc" "secure" "security"
     "servers" "sys" "uuid" "vfs" "voucher" "xlocale"
   ] ++ [
-    "arm" "xpc"
+    "arm" "xpc" "arm64"
   ];
 
   csu = [
