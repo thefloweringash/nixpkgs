@@ -11135,7 +11135,10 @@ in
 
   llvmPackages = with targetPlatform;
     if isDarwin then
-      llvmPackages_7
+      if isAarch64 then
+        llvmPackages_11
+      else
+        llvmPackages_7
     else if isFreeBSD then
       llvmPackages_7
     else if isLinux then
