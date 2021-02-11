@@ -45,6 +45,7 @@ import ./default.nix {
     aarch64-unknown-linux-gnu = "b551bd482041307fa3373a687d6d6a2c4c0931c2e0a68b8b75dc80bc5cf5f002";
     aarch64-unknown-linux-musl = "0a43d96a508c720520328112d609916d062f866a5c35f1db8f906284035d6d98";
     x86_64-apple-darwin = "fe3e248bc4b0ee0a2595693687ad845c8a8bda824a56c9321520bcca02433716";
+    aarch64-apple-darwin = "ce7d689e6f73dd9c07b672ba23dabe5159fa8c194dce71b4f3f95baeaf564082";
     powerpc64le-unknown-linux-gnu = "365d7721dd2521e5dad12aa73651bad2be375e798e443636d2c523cad5b54359";
   };
 
