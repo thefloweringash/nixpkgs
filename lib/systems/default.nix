@@ -118,7 +118,7 @@ rec {
         else throw "darwinPlatform: unknown platform for ${final.config}";
       # The canonical name for this attribute is darwinSdkVersion, but some
       # platforms define the old name "sdkVer".
-      darwinSdkVersion = final.sdkVer or "10.12";
+      darwinSdkVersion = final.sdkVer or (if final.isAarch64 then "11.0" else "10.12");
       darwinMinVersion = final.darwinSdkVersion;
 
       emulator = pkgs: let
