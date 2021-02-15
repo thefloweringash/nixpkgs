@@ -101,6 +101,14 @@ in
     '';
   };
 
+  signingUtils = callPackage ../os-specific/darwin/signing-utils {
+    inherit (darwin) cctools sigtool;
+  };
+
+  autoSignDarwinBinariesHook = makeSetupHook {
+    deps = [ darwin.signingUtils ];
+  } ../os-specific/darwin/signing-utils/auto-sign-hook.sh;
+
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
   };
