@@ -3,7 +3,8 @@
 , pythonSupport ? enableShared && stdenv.buildPlatform == stdenv.hostPlatform
 , icuSupport ? false, icu ? null
 , enableShared ? stdenv.hostPlatform.libc != "msvcrt"
-, enableStatic ? !enableShared,
+, enableStatic ? !enableShared
+, pkg-config, autoreconfHook
 }:
 
 stdenv.mkDerivation rec {
@@ -54,6 +55,8 @@ stdenv.mkDerivation rec {
   outputs = [ "bin" "dev" "out" "man" "doc" ]
     ++ lib.optional pythonSupport "py"
     ++ lib.optional (enableStatic && enableShared) "static";
+
+  nativeBuildInputs = lib.optionalString (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [ pkg-config autoreconfHook ];
 
   buildInputs = lib.optional pythonSupport python
     ++ lib.optional (pythonSupport && python?isPy2 && python.isPy2) gettext
