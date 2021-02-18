@@ -481,6 +481,10 @@ stdenv.mkDerivation {
       substituteAll ${../wrapper-common/utils.bash} $out/nix-support/utils.bash
     ''
 
+    + optionalString stdenv.targetPlatform.isDarwin ''
+      echo "-m${targetPlatform.darwinPlatform}-version-min=${targetPlatform.darwinMinVersion}" >> $out/nix-support/cc-cflags-before
+    ''
+
     ##
     ## Extra custom steps
     ##
