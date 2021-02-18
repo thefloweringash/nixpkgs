@@ -395,7 +395,7 @@ in rec {
       in { inherit tools libraries; } // tools // libraries);
 
       darwin = super.darwin // {
-        inherit (darwin) rewrite-tbd binutils-unwrapped signingUtils;
+        inherit (darwin) rewrite-tbd binutils-unwrapped cctools;
 
         binutils = darwin.binutils.override {
           coreutils = self.coreutils;
