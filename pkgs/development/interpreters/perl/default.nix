@@ -41,7 +41,11 @@ let
       ]
       ++ optional stdenv.isSunOS ./ld-shared.patch
       ++ optionals stdenv.isDarwin [ ./cpp-precomp.patch ./sw_vers.patch ]
-      ++ optional crossCompiling ./MakeMaker-cross.patch;
+      ++ optional crossCompiling ./MakeMaker-cross.patch
+      # https://github.com/Perl/perl5/pull/17946/
+      ++ optionals (stdenv.isDarwin && lib.versionAtLeast stdenv.hostPlatform.darwinMinVersion "11") [
+        ./darwin-11-support.patch
+      ];
 
     # This is not done for native builds because pwd may need to come from
     # bootstrap tools when building bootstrap perl.
