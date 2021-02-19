@@ -4,7 +4,6 @@
 , icuSupport ? false, icu ? null
 , enableShared ? stdenv.hostPlatform.libc != "msvcrt"
 , enableStatic ? !enableShared
-, pkg-config, autoreconfHook
 }:
 
 stdenv.mkDerivation rec {
@@ -56,8 +55,6 @@ stdenv.mkDerivation rec {
     ++ lib.optional pythonSupport "py"
     ++ lib.optional (enableStatic && enableShared) "static";
 
-  nativeBuildInputs = lib.optionalString (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [ pkg-config autoreconfHook ];
-
   buildInputs = lib.optional pythonSupport python
     ++ lib.optional (pythonSupport && python?isPy2 && python.isPy2) gettext
     ++ lib.optional (pythonSupport && python?isPy3 && python.isPy3) ncurses
@@ -77,6 +74,10 @@ stdenv.mkDerivation rec {
     (lib.withFeature icuSupport "icu")
     (lib.withFeatureAs pythonSupport "python" python)
   ];
+
+  preConfigure = lib.optionalString (lib.versionAtLeast stdenv.hostPlatform.darwinMinVersion "11") ''
+    MACOSX_DEPLOYMENT_TARGET=10.16
+  '';
 
   enableParallelBuilding = true;
 
