@@ -115,7 +115,7 @@ rec {
       darwinPlatform =
         if final.isMacOS then "macos"
         else if final.isiOS then "ios"
-        else throw "darwinPlatform: unknown platform for ${final.config}";
+        else "darwinPlatform: unknown platform for ${final.config}"; # TODO: throw if possible
       # The canonical name for this attribute is darwinSdkVersion, but some
       # platforms define the old name "sdkVer".
       darwinSdkVersion = final.sdkVer or (if final.isAarch64 then "11.0" else "10.12");
