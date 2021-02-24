@@ -142,6 +142,7 @@ stdenv.mkDerivation {
 
   passthru = {
     inherit targetPrefix;
+    isGNU = true;
   };
 
   meta = with lib; {
