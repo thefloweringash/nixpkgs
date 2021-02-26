@@ -19,14 +19,8 @@ stdenv.mkDerivation rec {
 
   patches = [
     # Suport macOS version 11.0
-    # https://github.com/Homebrew/homebrew-core/blob/7195a32290968834b2435d9e7f00051ecb2d5371/Formula/libtool.rb#L20-L25
     # https://lists.gnu.org/archive/html/libtool-patches/2020-06/msg00001.html
-    (fetchpatch {
-      url = "https://raw.githubusercontent.com/Homebrew/formula-patches/e5fbd46a25e35663059296833568667c7b572d9a/libtool/dynamic_lookup-11.patch";
-      includes = [ "m4/libtool.m4" ];
-      extraPrefix = "";
-      sha256 = "132vzm83pyqwh0dz1hbzcbavcns04qqd7dwapi1nzzpl8jgwcsli";
-    })
+    ./libtool2-macos11.patch
   ];
 
   # Normally we'd use autoreconfHook, but that includes libtoolize.
