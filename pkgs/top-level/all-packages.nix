@@ -4427,11 +4427,6 @@ in
     util-linux = util-linuxMinimal;
     jre_headless = jre8_headless; # TODO: remove override https://github.com/NixOS/nixpkgs/pull/89731
   };
-  elasticsearch7-oss = callPackage ../servers/search/elasticsearch/7.x.nix {
-    enableUnfree = false;
-    util-linux = util-linuxMinimal;
-    jre_headless = jre8_headless; # TODO: remove override https://github.com/NixOS/nixpkgs/pull/89731
-  };
   elasticsearch = elasticsearch6;
   elasticsearch-oss = elasticsearch6-oss;
 
@@ -4444,7 +4439,7 @@ in
     elasticsearch = elasticsearch6-oss;
   };
   elasticsearch7Plugins = elasticsearchPlugins.override {
-    elasticsearch = elasticsearch7-oss;
+    elasticsearch = elasticsearch7;
   };
 
   elasticsearch-curator = callPackage ../tools/admin/elasticsearch-curator {
