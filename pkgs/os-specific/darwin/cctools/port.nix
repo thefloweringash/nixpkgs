@@ -48,7 +48,14 @@ stdenv.mkDerivation {
   # TODO(@Ericson2314): Always pass "--target" and always targetPrefix.
   configurePlatforms = [ "build" "host" ]
     ++ lib.optional (stdenv.targetPlatform != stdenv.hostPlatform) "target";
-  configureFlags = [ "--disable-clang-as" ]
+  configureFlags = [ ]
+    # On aarch64-darwin we must use clang, because "as" from cctools just doesn't
+    # handle the arch. Proxying calls to clang produces quite a bit of warnings,
+    # and eventually it would be nice to switch to the following alias for "as":
+    # $ clang -x assembler -integrated-as -c
+    # It may be a good idea to do that on all platforms, but it requires
+    # more invasive changes, including bootstrap tools.
+    ++ lib.optionals (!stdenv.isAarch64) [ "--disable-clang-as" ]
     ++ lib.optionals enableTapiSupport [
       "--enable-tapi-support"
       "--with-libtapi=${libtapi}"
