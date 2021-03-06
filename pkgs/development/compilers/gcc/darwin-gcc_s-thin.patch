@@ -1,0 +1,35 @@
+diff --git a/libgcc/config/t-slibgcc-darwin b/libgcc/config/t-slibgcc-darwin
+index 906d4225fcc..45cf18d154c 100644
+--- a/libgcc/config/t-slibgcc-darwin
++++ b/libgcc/config/t-slibgcc-darwin
+@@ -65,8 +65,7 @@ libgcc_s.2.dylib : all-multi $(SHLIB_VERPFX).10.5.ver libgcc_s$(SHLIB_EXT)
+ 	    -R $(SHLIB_VERPFX).10.5.ver -c -urx \
+ 	    ../$${mlib}/libgcc/$${mlib}/libgcc_s$(SHLIB_EXT) || exit 1 ; \
+ 	done
+-	$(LIPO) -output $@ -create $(@)_T*
+-	rm $(@)_T*
++	mv $(@)_T* $@
+ 
+ # In order to support -mmacosx-version-min, you need to have multiple
+ # different libgcc_s libraries that actually get linked against, one for
+@@ -82,8 +81,7 @@ libgcc_s.%.dylib : all-multi $(SHLIB_VERPFX).%.ver libgcc_s$(SHLIB_EXT)
+ 	    -s $(SHLIB_VERPFX).$(*).ver -c -u \
+ 	    ../$${mlib}/libgcc/$${mlib}/libgcc_s$(SHLIB_EXT)  || exit 1 ; \
+ 	done
+-	$(LIPO) -output $@ -create $(@)_T*
+-	rm $(@)_T*
++	mv $(@)_T* $@
+ endif
+ 
+ libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT): all-multi libgcc_s$(SHLIB_EXT)
+@@ -92,9 +90,7 @@ libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT): all-multi libgcc_s$(SHLIB_EXT)
+ 	  cp ../$${mlib}/libgcc/$${mlib}/libgcc_s$(SHLIB_EXT)  \
+ 	    ./libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT)_T_$${mlib} || exit 1 ; \
+ 	done
+-	$(LIPO) -output libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT) \
+-	  -create libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT)_T*
+-	rm libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT)_T*
++	mv libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT)_T* libgcc_s.$(SHLIB_SOVERSION)$(SHLIB_EXT)
+ 
+ install-darwin-libgcc-stubs :
+ 	$(mkinstalldirs) $(DESTDIR)$(slibdir)
