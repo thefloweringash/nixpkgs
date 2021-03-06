@@ -67,6 +67,19 @@ let majorVersion = "10";
       ++ optional langFortran ../gfortran-driving.patch
       ++ optional (targetPlatform.libc == "musl" && targetPlatform.isPower) ../ppc-musl.patch
 
+      ++ optional (stdenv.isDarwin && stdenv.isAarch64) (fetchpatch {
+        url = "https://github.com/fxcoudert/gcc/compare/releases/gcc-10.2.0...gcc-10-arm-20210220.diff";
+        sha256 = "sha256-0KHdkYawaf37aYjKDsueyFOdcBcVXC2OmAreMbb/Sac=";
+      })
+
+      # GCC builds libgcc_s as a fat library even when there's only one arch present.
+      # On aarch64-darwin signatures are required for binaries, and when we strip,
+      # the signature is recreated by sigtool. Unfortunately, sigtool bails on fat
+      # binaries and we end up with a broken libgcc_s. This patch replaces a fat
+      # libgcc_s a thin one to avoid running into this issue. It can be removed
+      # when fat binaries are handled out of the box.
+      ++ optional (stdenv.isDarwin && stdenv.isAarch64) ../darwin-gcc_s-thin.patch
+
       # Obtain latest patch with ../update-mcfgthread-patches.sh
       ++ optional (!crossStageStatic && targetPlatform.isMinGW) ./Added-mcf-thread-model-support-from-mcfgthread.patch;
 
@@ -187,7 +200,11 @@ stdenv.mkDerivation ({
   dontDisableStatic = true;
 
   # TODO(@Ericson2314): Always pass "--target" and always prefix.
-  configurePlatforms = [ "build" "host" ] ++ lib.optional (targetPlatform != hostPlatform) "target";
+  configurePlatforms = []
+    # TODO: fix incorrect values without kernel version suffix passed on aarch64-darwin,
+    # resulting in failing builld due to missing -gstabs flag in "as".
+    ++ lib.optionals (!(stdenv.isDarwin && stdenv.isAarch64)) [ "build" "host" ]
+    ++ lib.optional (targetPlatform != hostPlatform) "target";
 
   configureFlags = import ../common/configure-flags.nix {
     inherit
