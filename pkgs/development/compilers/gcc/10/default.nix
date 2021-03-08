@@ -72,14 +72,6 @@ let majorVersion = "10";
         sha256 = "sha256-0KHdkYawaf37aYjKDsueyFOdcBcVXC2OmAreMbb/Sac=";
       })
 
-      # GCC builds libgcc_s as a fat library even when there's only one arch present.
-      # On aarch64-darwin signatures are required for binaries, and when we strip,
-      # the signature is recreated by sigtool. Unfortunately, sigtool bails on fat
-      # binaries and we end up with a broken libgcc_s. This patch replaces a fat
-      # libgcc_s a thin one to avoid running into this issue. It can be removed
-      # when fat binaries are handled out of the box.
-      ++ optional (stdenv.isDarwin && stdenv.isAarch64) ../darwin-gcc_s-thin.patch
-
       # Obtain latest patch with ../update-mcfgthread-patches.sh
       ++ optional (!crossStageStatic && targetPlatform.isMinGW) ./Added-mcf-thread-model-support-from-mcfgthread.patch;
 
