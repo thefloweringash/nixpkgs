@@ -6,8 +6,8 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "thefloweringash";
     repo = "sigtool";
-    rev = "429bc3bbe68d40606ac3ea447d93463a125daf5b";
-    sha256 = "0fkszrilbmf1kiks9j092qzagwxclqv4y12yj8hxqpg6zy88fjj6";
+    rev = "4a3719b42dc91c3f513df94048851cc98e7c7fcf";
+    sha256 = "04ra1cx7k1sdbkj5yrvl0s3l333vpir8rnm8k1dh2zy1w0a6hpqa";
   };
 
   nativeBuildInputs = [ pkg-config makeWrapper ];
