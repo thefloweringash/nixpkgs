@@ -304,10 +304,6 @@ stdenv.mkDerivation {
       done
     ''
 
-    + optionalString stdenv.targetPlatform.isDarwin ''
-      echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/libc-ldflags
-    ''
-
     ###
     ### Remove LC_UUID
     ###
