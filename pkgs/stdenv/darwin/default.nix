@@ -5,15 +5,15 @@
   if localSystem.isAarch64 then
     let
       fetch = { file, sha256, executable ? true }: import <nix/fetchurl.nix> {
-        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/5803494ca3a3ed823e1ffe6d2c99f816ad64a8d7/${file}";
+        url = "https://s3.ap-northeast-1.amazonaws.com/nix-misc.cons.org.nz/stdenv-darwin/aarch64/2a15bb68bdececc8f7e5b79691b2a31b2da07938/${file}";
         inherit (localSystem) system;
         inherit sha256 executable;
       }; in {
         sh      = fetch { file = "sh";    sha256 = "1saraa8qgn5n17qw5np2kjk482gk0a4sbblcmy97dkwm38xbidn1"; };
-        bzip2   = fetch { file = "bzip2"; sha256 = "08mlnpzsaxyhvbsxzrnk4bj1z1sl1sz3amgfcmsfnfky67c0ic84"; };
+        bzip2   = fetch { file = "bzip2"; sha256 = "1khs8s5klf76plhlvlc1ma838r8pc1qigk9f5bdycwgbn0nx240q"; };
         mkdir   = fetch { file = "mkdir"; sha256 = "1ry8rgrw8c2a8kjcc3ni4vn4cvhpd7m9jm7g545g1js3q093fpl7"; };
         cpio    = fetch { file = "cpio";  sha256 = "17pxq61yjjvyd738fy9f392hc9cfzkl612sdr9rxr3v0dgvm8y09"; };
-        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "0plv693vc32najfr8039ayswk4bkyd6559ablc84kf0nn8wzp96g"; executable = false; };
+        tarball = fetch { file = "bootstrap-tools.cpio.bz2"; sha256 = "19l9rkj6swbdn2jl9gky91s0ddga5fd3k931lr6m4d0jdn8v2x3n"; executable = false; };
       }
   else
     let
@@ -36,7 +36,7 @@ let
   inherit (localSystem) system;
 
   # Bootstrap version needs to be known to reference headers included in the bootstrap tools
-  bootstrapLlvmVersion = if localSystem.isAarch64 then "11.0.1" else "7.1.0";
+  bootstrapLlvmVersion = if localSystem.isAarch64 then "11.1.0" else "7.1.0";
 
   useAppleSDKLibs = localSystem.isAarch64;
   haveKRB5 = localSystem.isx86_64;
