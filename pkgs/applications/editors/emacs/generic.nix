@@ -10,7 +10,7 @@
 , Xaw3d, libXcursor,  pkg-config, gettext, libXft, dbus, libpng, libjpeg, giflib
 , libtiff, librsvg, gconf, libxml2, imagemagick, gnutls, libselinux
 , alsaLib, cairo, acl, gpm, AppKit, GSS, ImageIO, m17n_lib, libotf
-, jansson, harfbuzz
+, jansson, harfbuzz, sigtool
 , dontRecurseIntoAttrs ,emacsPackagesFor
 , libgccjit, targetPlatform, makeWrapper # native-comp params
 , systemd ? null
@@ -47,7 +47,11 @@ let emacs = stdenv.mkDerivation (lib.optionalAttrs nativeComp {
   NATIVE_FULL_AOT = "1";
   LIBRARY_PATH = "${lib.getLib stdenv.cc.libc}/lib";
 } // lib.optionalAttrs stdenv.isDarwin {
-  CFLAGS = "-DMAC_OS_X_VERSION_MAX_ALLOWED=101200";
+  CFLAGS =
+    let
+      version = lib.versions.splitVersion stdenv.hostPlatform.darwinMinVersion;
+      part = i: lib.fixedWithNumber 2 (if i < builtins.length version then lib.elemAt version i else 0);
+    in "-DMAC_OS_X_VERSION_MAX_ALLOWED=${part 0}${part 1}${part 2}";
 } // {
   inherit pname version patches;
 
@@ -102,7 +106,8 @@ let emacs = stdenv.mkDerivation (lib.optionalAttrs nativeComp {
 
   nativeBuildInputs = [ pkg-config makeWrapper ]
     ++ lib.optionals srcRepo [ autoreconfHook texinfo ]
-    ++ lib.optional (withX && (withGTK3 || withXwidgets)) wrapGAppsHook;
+    ++ lib.optional (withX && (withGTK3 || withXwidgets)) wrapGAppsHook
+    ++ lib.optional (stdenv.isDarwin && stdenv.isAarch64) [ sigtool ];
 
   buildInputs =
     [ ncurses gconf libxml2 gnutls alsaLib acl gpm gettext jansson harfbuzz.dev ]
@@ -139,6 +144,12 @@ let emacs = stdenv.mkDerivation (lib.optionalAttrs nativeComp {
     ++ lib.optional nativeComp "--with-native-compilation"
     ++ lib.optional withImageMagick "--with-imagemagick"
     ;
+
+  # Emacs checks for arm-apple-darwin, but our configuration is
+  # aarch64-apple-darwin. Force enable DO_CODESIGN.
+  preConfigure = lib.optionalString (stdenv.isDarwin && stdenv.isAarch64) ''
+    sed -i 's/^DO_CODESIGN=.*/DO_CODESIGN=yes/' src/Makefile.in
+  '';
 
   installTargets = [ "tags" "install" ];
 

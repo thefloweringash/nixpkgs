@@ -23189,6 +23189,7 @@ in
     acl = null;
     gpm = null;
     inherit (darwin.apple_sdk.frameworks) AppKit GSS ImageIO;
+    inherit (darwin) sigtool; # TODO: maybe this should be part of stdenv
   };
 
   emacs27-nox = lowPrio (appendToName "nox" (emacs27.override {
