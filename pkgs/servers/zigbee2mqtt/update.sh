@@ -17,8 +17,6 @@ node2nix --nodejs-12 \
   -l npm-shrinkwrap.json \
   -c node.nix \
   --bypass-cache \
-  --no-copy-node-env \
-  --node-env ../../development/node-packages/node-env.nix
 rm package.json npm-shrinkwrap.json
 
 {
@@ -26,5 +24,5 @@ rm package.json npm-shrinkwrap.json
     nix-update --version "$TARGET_VERSION" --build zigbee2mqtt
 }
 
-git add ./default.nix ./node-packages.nix ./node.nix
+git add ./default.nix ./node-packages.nix ./node.nix ./node-env.nix
 git commit -m "zigbee2mqtt: ${CURRENT_VERSION} -> ${TARGET_VERSION}"
