@@ -236,6 +236,12 @@ let
             url = "https://github.com/svanderburg/node2nix/commit/58736093161f2d237c17e75a96529b018cd0ac64.patch";
             sha256 = "0sif7803c9g6gjmmdniw5qxrq5igiz9nqdmdrcf1hxfi5x43a32h";
           })
+          # decrease derivation size
+          # https://github.com/svanderburg/node2nix/pull/255
+          (fetchpatch {
+            url = "https://github.com/svanderburg/node2nix/commit/1cbaf383c3787041e04e510d38f1832a31ee7613.patch";
+            sha256 = "0w8fcyr12g2340rn06isv40jkmz2khmak81c95zpkjgipzx7hp7w";
+          })
         ];
       };
       postInstall = ''
