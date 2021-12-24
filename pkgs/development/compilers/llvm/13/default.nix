@@ -252,6 +252,10 @@ let
                );
     };
 
+    libcxxHeaders = libraries.libcxx.override {
+      headersOnly = true;
+    };
+
     libcxxabi = callPackage ./libcxxabi {
       inherit llvm_meta;
       stdenv = if stdenv.hostPlatform.useLLVM or false

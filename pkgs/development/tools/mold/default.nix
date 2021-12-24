@@ -25,7 +25,7 @@ stdenv.mkDerivation rec {
 
   dontUseCmakeConfigure = true;
   EXTRA_LDFLAGS = "-fuse-ld=${llvmPackages_latest.lld}/bin/ld.lld";
-  LTO = 1;
+  LTO = if stdenv.isDarwin then 0 else 1;
   makeFlags = [ "PREFIX=${placeholder "out"}" ];
 
   meta = with lib; {
@@ -33,6 +33,5 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/rui314/mold";
     license = lib.licenses.agpl3Plus;
     maintainers = with maintainers; [ nitsky ];
-    broken = stdenv.isAarch64;
   };
 }
