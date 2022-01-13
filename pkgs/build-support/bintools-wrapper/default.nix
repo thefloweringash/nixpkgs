@@ -93,6 +93,7 @@ let
     then import ../expand-response-params { inherit (buildPackages) stdenv; }
     else "";
 
+  darwinRequiresSignatures = targetPlatform.isDarwin && targetPlatform.isAarch64;
 in
 
 stdenv.mkDerivation {
@@ -373,9 +374,13 @@ stdenv.mkDerivation {
     ##
     ## Code signing on Apple Silicon
     ##
-    + optionalString (targetPlatform.isDarwin && targetPlatform.isAarch64) ''
+    ## As of 973.0.1, cctools-port will produce signatures on linking, but not
+    ## strip or install_name_tool. We need to keep the linker hook around to
+    ## support the older bintools in the bootstrap tarball.
+    + optionalString (darwinRequiresSignatures && lib.versionOlder bintoolsVersion "973.0.1") ''
       echo 'source ${postLinkSignHook}' >> $out/nix-support/post-link-hook
-
+    ''
+    + optionalString darwinRequiresSignatures ''
       export signingUtils=${signingUtils}
 
       wrap \
