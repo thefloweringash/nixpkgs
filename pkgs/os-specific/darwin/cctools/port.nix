@@ -35,7 +35,13 @@ stdenv.mkDerivation {
     ++ lib.optionals stdenv.isDarwin [ libobjc ]
     ++ lib.optional enableTapiSupport libtapi;
 
-  patches = [ ./ld-ignore-rpath-link.patch ./ld-rpath-nonfinal.patch ];
+  patches = [ ./ld-ignore-rpath-link.patch ./ld-rpath-nonfinal.patch ]
+    # Upstream supports running on 10.12 if built on 10.13 or newer using
+    # availability macros. Since our SDK is 10.12, the required functions
+    # aren't present, there's no availability information, and linking fails to
+    # find `open_memstream`. This workaround relies on an implicit definition
+    # and dead code elimination.
+    ++ lib.optional (lib.versionOlder stdenv.hostPlatform.darwinMinVersion "10.13") ./no-diagnostics.patch;
 
   __propagatedImpureHostDeps = [
     # As far as I can tell, otool from cctools is the only thing that depends on these two, and we should fix them
