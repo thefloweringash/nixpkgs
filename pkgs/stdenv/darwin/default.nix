@@ -507,6 +507,7 @@ rec {
           libxml2.out
           curl.out
           openssl.out
+          openssl.lib
           libssh2.out
           nghttp2.lib
           coreutils
@@ -582,6 +583,7 @@ rec {
           libxml2.out
           curl.out
           openssl.out
+          openssl.lib
           libssh2.out
           nghttp2.lib
           coreutils
@@ -761,6 +763,7 @@ rec {
         libidn2.out
         libunistring.out
         openssl.out
+        openssl.lib
         libssh2.out
         nghttp2.lib
         brotli.lib
