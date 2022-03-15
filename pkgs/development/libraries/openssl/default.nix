@@ -210,6 +210,8 @@ in {
        else ./use-etc-ssl-certs.patch)
     ] ++ lib.optionals (stdenv.isDarwin && (builtins.substring 5 5 version) < "m") [
       ./1.1/macos-yosemite-compat.patch
+    ] ++ lib.optionals stdenv.isDarwin [
+      ./1.1/install-name.patch
     ];
     withDocs = true;
   };
