@@ -1,22 +1,16 @@
-{ lib, buildFHSUserEnv, version, src }:
+{ lib, buildFHSUserEnv, python3, platformio-core, version, src }:
 
 let
   pio-pkgs = pkgs:
-    let
-      python = pkgs.python3.override {
-        packageOverrides = self: super: {
-          platformio = self.callPackage ./core.nix { inherit version src; };
-        };
-      };
-    in (with pkgs; [
+    [ platformio-core ]
+    ++ (with pkgs; [
       zlib
       git
-    ]) ++ (with python.pkgs; [
+    ]) ++ (with python3.pkgs; [
       python
       setuptools
       pip
       bottle
-      platformio
     ]);
 
 in buildFHSUserEnv {
