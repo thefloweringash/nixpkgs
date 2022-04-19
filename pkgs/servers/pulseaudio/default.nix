@@ -4,7 +4,7 @@
 , avahi, libjack2, libasyncns, lirc, dbus
 , sbc, bluez5, udev, openssl, fftwFloat
 , soxr, speexdsp, systemd, webrtc-audio-processing
-, check, meson, ninja, m4
+, check, libintl, meson, ninja, m4
 
 , x11Support ? false
 
@@ -43,6 +43,18 @@ stdenv.mkDerivation rec {
     # Install sysconfdir files inside of the nix store,
     # but use a conventional runtime sysconfdir outside the store
     ./add-option-for-installation-sysconfdir.patch
+
+    # https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/merge_requests/654
+    ./0001-Make-gio-2.0-optional-when-gsettings-is-disabled.patch
+
+    # TODO (not sent upstream)
+    ./0002-Ignore-SCM_CREDS-on-macOS.patch
+    ./0003-Disable-z-nodelete-on-darwin.patch
+    ./0004-Prefer-clock_gettime.patch
+    ./0005-Include-poll-posix.c-on-darwin.patch
+    ./0006-Only-use-version-script-on-GNU-ish-linkers.patch
+    ./0007-Adapt-undefined-link-args-per-linker.patch
+    ./0008-Use-correct-semaphore-on-darwin.patch
   ];
 
   outputs = [ "out" "dev" ];
@@ -54,7 +66,7 @@ stdenv.mkDerivation rec {
     lib.optionals stdenv.isLinux [ libcap ];
 
   buildInputs =
-    [ libtool libsndfile soxr speexdsp fftwFloat check ]
+    [ libtool libsndfile soxr speexdsp fftwFloat check libintl ]
     ++ lib.optionals stdenv.isLinux [ glib dbus ]
     ++ lib.optionals stdenv.isDarwin [ AudioUnit Cocoa CoreServices ]
     ++ lib.optionals (!libOnly) (
@@ -77,15 +89,18 @@ stdenv.mkDerivation rec {
     "-Dbluez5-gstreamer=disabled"
     "-Ddatabase=simple"
     "-Ddoxygen=false"
+    "-Ddbus=${if stdenv.isLinux then "enabled" else "disabled"}"
     "-Delogind=disabled"
+    "-Dglib=${if stdenv.isLinux then "enabled" else "disabled"}"
     # gsettings does not support cross-compilation
-    "-Dgsettings=${if stdenv.buildPlatform == stdenv.hostPlatform then "enabled" else "disabled"}"
+    "-Dgsettings=${if stdenv.isLinux && (stdenv.buildPlatform == stdenv.hostPlatform) then "enabled" else "disabled"}"
     "-Dgstreamer=disabled"
     "-Dgtk=disabled"
     "-Djack=${if jackaudioSupport && !libOnly then "enabled" else "disabled"}"
     "-Dlirc=${if remoteControlSupport then "enabled" else "disabled"}"
     "-Dopenssl=${if airtunesSupport then "enabled" else "disabled"}"
     "-Dorc=disabled"
+    "-Doss-output=${if stdenv.isLinux then "enabled" else "disabled"}"
     "-Dsystemd=${if useSystemd && !libOnly then "enabled" else "disabled"}"
     "-Dtcpwrap=disabled"
     "-Dudev=${if !libOnly then "enabled" else "disabled"}"
