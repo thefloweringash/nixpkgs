@@ -5,6 +5,7 @@
 , buildEnv, bundler, bundix
 , makeWrapper, buildRubyGem, defaultGemConfig, removeReferencesTo
 , openssl, openssl_1_1
+, rustPlatform
 } @ args:
 
 let
@@ -18,13 +19,14 @@ let
   # Contains the ruby version heuristics
   rubyVersion = import ./ruby-version.nix { inherit lib; };
 
-  generic = { version, sha256 }: let
+  generic = { version, sha256, cargoDepsHash ? "" }: let
     ver = version;
     atLeast30 = lib.versionAtLeast ver.majMin "3.0";
+    atLeast32 = lib.versionAtLeast ver.majMin "3.2";
     self = lib.makeOverridable (
       { stdenv, buildPackages, lib
       , fetchurl, fetchpatch, fetchFromSavannah, fetchFromGitHub
-      , useRailsExpress ? true
+      , useRailsExpress ? false
       , rubygemsSupport ? true
       , zlib, zlibSupport ? true
       , openssl, openssl_1_1, opensslSupport ? true
@@ -43,7 +45,8 @@ let
       #   Or (usually):
       #     $(nix-build -A ruby)/lib/ruby/2.6.0/x86_64-linux/rbconfig.rb
       # - In $out/lib/libruby.so and/or $out/lib/libruby.dylib
-      , removeReferencesTo, jitSupport ? false
+      , removeReferencesTo, jitSupport ? atLeast32
+      , rustPlatform, yjitSupport ? atLeast32
       , autoreconfHook, bison, autoconf
       , buildEnv, bundler, bundix
       , libiconv, libobjc, libunwind, Foundation
@@ -52,6 +55,7 @@ let
           useRailsExpress = false;
           docSupport = false;
           rubygemsSupport = false;
+          yjitSupport = false;
         }
       , useBaseRuby ? stdenv.hostPlatform != stdenv.buildPlatform || useRailsExpress
       }:
@@ -71,7 +75,12 @@ let
 
         nativeBuildInputs = [ autoreconfHook bison ]
           ++ (op docSupport groff)
-          ++ op useBaseRuby baseRuby;
+          ++ op useBaseRuby baseRuby
+          ++ ops (yjitSupport && atLeast32) [
+            rustPlatform.cargoSetupHook
+            rustPlatform.rust.cargo
+            rustPlatform.rust.rustc
+          ];
         buildInputs = [ autoconf ]
           ++ (op fiddleSupport libffi)
           ++ (ops cursesSupport [ ncurses readline ])
@@ -96,7 +105,10 @@ let
             patchLevel = ver.patchLevel;
           }).${ver.majMinTiny}
           ++ op (lib.versionOlder ver.majMin "3.1") ./do-not-regenerate-revision.h.patch
-          ++ op (atLeast30 && useBaseRuby) ./do-not-update-gems-baseruby.patch
+          ++ op (atLeast30 && useBaseRuby) (
+            if atLeast32 then ./do-not-update-gems-baseruby-3.2.patch
+            else ./do-not-update-gems-baseruby.patch
+          )
           ++ ops (!atLeast30 && rubygemsSupport) [
             # We upgrade rubygems to a version that isn't compatible with the
             # ruby 2.7 installer. Backport the upstream fix.
@@ -112,6 +124,15 @@ let
               sha256 = "0wrii25cxcz2v8bgkrf7ibcanjlxwclzhayin578bf0qydxdm9qy";
             })
           ];
+
+        cargoRoot = if (yjitSupport && atLeast32) then "yjit" else null;
+        cargoDeps = if (yjitSupport && atLeast32) then rustPlatform.fetchCargoTarball {
+          inherit src;
+          sourceRoot = "${pname}-${version}/${cargoRoot}";
+          sha256 = cargoDepsHash;
+        } else null;
+
+        makeFlags = [ "V=1" ];
 
         postUnpack = opString rubygemsSupport ''
           rm -rf $sourceRoot/{lib,test}/rubygems*
@@ -141,7 +162,10 @@ let
           # ruby enables -O3 for gcc, however our compiler hardening wrapper
           # overrides that by enabling `-O2` which is the minimum optimization
           # needed for `_FORTIFY_SOURCE`.
-        ] ++ lib.optional stdenv.cc.isGNU "CFLAGS=-O3" ++ [
+        ]
+        ++ lib.optional stdenv.cc.isGNU "CFLAGS=-O3"
+        ++ lib.optional atLeast32 [
+          (lib.enableFeature yjitSupport "yjit")
         ] ++ ops stdenv.isDarwin [
           # on darwin, we have /usr/include/tk.h -- so the configure script detects
           # that tk is installed
@@ -273,5 +297,11 @@ in {
   ruby_3_1 = generic {
     version = rubyVersion "3" "1" "2" "";
     sha256 = "0gm84ipk6mrfw94852w5h7xxk2lqrxjbnlwb88svf0lz70933131";
+  };
+
+  ruby_3_2 = generic {
+    version = rubyVersion "3" "2" "0" "";
+    sha256 = "sha256-2qp44TYLJ4P5je7OtnetkA86NsD/puK2sZCQvnerwnI=";
+    cargoDepsHash = "sha256-6du7RJo0DH+eYMOoh3L31F3aqfR5+iG1iKauSV1uNcQ=";
   };
 }
