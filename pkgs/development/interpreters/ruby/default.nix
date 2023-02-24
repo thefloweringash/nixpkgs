@@ -2,7 +2,7 @@
 , fetchurl, fetchpatch, fetchFromSavannah, fetchFromGitHub
 , zlib, gdbm, ncurses, readline, groff, libyaml, libffi, jemalloc, autoreconfHook, bison
 , autoconf, libiconv, libobjc, libunwind, Foundation
-, buildEnv, bundler, bundix
+, buildEnv, bundler, bundix, rustPlatform
 , makeWrapper, buildRubyGem, defaultGemConfig, removeReferencesTo
 , openssl, openssl_1_1
 } @ args:
@@ -17,9 +17,10 @@ let
   # Contains the ruby version heuristics
   rubyVersion = import ./ruby-version.nix { inherit lib; };
 
-  generic = { version, sha256 }: let
+  generic = { version, sha256, cargoSha256 ? null }: let
     ver = version;
     atLeast30 = lib.versionAtLeast ver.majMin "3.0";
+    atLeast32 = lib.versionAtLeast ver.majMin "3.2";
     self = lib.makeOverridable (
       { stdenv, buildPackages, lib
       , fetchurl, fetchpatch, fetchFromSavannah, fetchFromGitHub
@@ -41,7 +42,8 @@ let
       #   Or (usually):
       #     $(nix-build -A ruby)/lib/ruby/2.6.0/x86_64-linux/rbconfig.rb
       # - In $out/lib/libruby.so and/or $out/lib/libruby.dylib
-      , removeReferencesTo, jitSupport ? false
+      , removeReferencesTo, jitSupport ? yjitSupport
+      , rustPlatform, yjitSupport ? atLeast32
       , autoreconfHook, bison, autoconf
       , buildEnv, bundler, bundix
       , libiconv, libobjc, libunwind, Foundation
@@ -70,6 +72,7 @@ let
 
         nativeBuildInputs = [ autoreconfHook bison ]
           ++ (op docSupport groff)
+          ++ ops yjitSupport [ rustPlatform.cargoSetupHook rustPlatform.rust.cargo rustPlatform.rust.rustc ]
           ++ op useBaseRuby baseRuby;
         buildInputs = [ autoconf ]
           ++ (op fiddleSupport libffi)
@@ -114,6 +117,14 @@ let
             })
           ];
 
+        cargoRoot = opString yjitSupport "yjit";
+
+        cargoDeps = if yjitSupport then rustPlatform.fetchCargoTarball {
+          inherit src;
+          sourceRoot = "${pname}-${version}/${cargoRoot}";
+          sha256 = cargoSha256;
+        } else null;
+
         postUnpack = opString rubygemsSupport ''
           rm -rf $sourceRoot/{lib,test}/rubygems*
           cp -r ${rubygems}/lib/rubygems* $sourceRoot/lib
@@ -136,6 +147,7 @@ let
           (lib.withFeatureAs true "soname" "ruby-${version}")
           (lib.withFeatureAs useBaseRuby "baseruby" "${baseRuby}/bin/ruby")
           (lib.enableFeature jitSupport "jit-support")
+          (lib.enableFeature yjitSupport "yjit")
           (lib.enableFeature docSupport "install-doc")
           (lib.withFeature jemallocSupport "jemalloc")
           (lib.withFeatureAs docSupport "ridir" "${placeholder "devdoc"}/share/ri")
@@ -299,5 +311,6 @@ in {
   ruby_3_2 = generic {
     version = rubyVersion "3" "2" "1" "";
     sha256 = "sha256-E9Z5AWYO4yF9vZ3VYFk0a9QhLOZKacMG71LfZJNfjb0=";
+    cargoSha256 = "sha256-6du7RJo0DH+eYMOoh3L31F3aqfR5+iG1iKauSV1uNcQ=";
   };
 }
