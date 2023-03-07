@@ -277,6 +277,7 @@ let
             ruby = self;
           };
 
+          inherit rubygems;
           inherit (import ../../ruby-modules/with-packages {
             inherit lib stdenv makeWrapper buildRubyGem buildEnv;
             gemConfig = defaultGemConfig;
