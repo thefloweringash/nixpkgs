@@ -20,6 +20,7 @@ let
   generic = { version, sha256, cargoSha256 ? null }: let
     ver = version;
     atLeast30 = lib.versionAtLeast ver.majMin "3.0";
+    atLeast31 = lib.versionAtLeast ver.majMin "3.1";
     atLeast32 = lib.versionAtLeast ver.majMin "3.2";
     self = lib.makeOverridable (
       { stdenv, buildPackages, lib
@@ -93,7 +94,10 @@ let
         enableParallelBuilding = true;
 
         patches = op (lib.versionOlder ver.majMin "3.1") ./do-not-regenerate-revision.h.patch
-          ++ op (atLeast30 && useBaseRuby) ./do-not-update-gems-baseruby.patch
+          ++ op (atLeast30 && useBaseRuby) (
+            if atLeast32 then ./do-not-update-gems-baseruby-3.2.patch
+            else ./do-not-update-gems-baseruby.patch
+          )
           ++ ops (ver.majMin == "3.0") [
             # Ruby 3.0 adds `-fdeclspec` to $CC instead of $CFLAGS. Fixed in later versions.
             (fetchpatch {
@@ -115,7 +119,19 @@ let
               url = "https://github.com/ruby/ruby/commit/261d8dd20afd26feb05f00a560abd99227269c1c.patch";
               sha256 = "0wrii25cxcz2v8bgkrf7ibcanjlxwclzhayin578bf0qydxdm9qy";
             })
-          ];
+          ]
+          # Ruby 3.1.3 cannot find pkg-config in mkmf.rb
+          # https://bugs.ruby-lang.org/issues/19189
+          ++ op (ver.majMin == "3.1") (fetchpatch {
+            url = "https://github.com/ruby/ruby/pull/6927/commits/cc2b22e10890526b65cd8b29207ab346404f41c0.patch";
+            sha256 = "sha256-0Ku7l6VEpcvxexL9QA5+mNER4v8gYZOJhAjhCL1WDpw=";
+          })
+          # When using a baseruby, ruby always sets "libdir" to the build
+          # directory, which nix rejects due to a reference in to /build/ in
+          # the final product. Removing this reference doesn't seem to break
+          # anything and fixes cross compliation.
+          ++ op atLeast31 ./dont-refer-to-build-dir.patch
+          ;
 
         cargoRoot = opString yjitSupport "yjit";
 
