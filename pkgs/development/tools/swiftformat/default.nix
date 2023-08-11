@@ -1,37 +1,23 @@
-{ stdenv, lib, fetchFromGitHub, runCommand }:
-
-# This derivation is impure: it relies on an Xcode toolchain being installed
-# and available in the expected place. The values of sandboxProfile and
-# hydraPlatforms are copied pretty directly from the MacVim derivation, which
-# is also impure.
+{ stdenv, lib, fetchFromGitHub, swift, swiftpm }:
 
 stdenv.mkDerivation rec {
   pname = "swiftformat";
-  version = "0.47.10";
+  version = "0.51.15";
 
   src = fetchFromGitHub {
     owner = "nicklockwood";
     repo = "SwiftFormat";
     rev = version;
-    sha256 = "1gqxpymbhpmap0i2blg9akarlql4mkzv45l4i212gsxcs991b939";
+    sha256 = "sha256-cxW5L2x4HOfDxyx+lm8ek2DWwseu6KmTcBLCRw9HXSE=";
   };
 
-  preConfigure = "LD=$CC";
+  nativeBuildInputs = [ swift swiftpm ];
 
-  buildPhase = ''
-    /usr/bin/xcodebuild -project SwiftFormat.xcodeproj \
-      -scheme "SwiftFormat (Command Line Tool)" \
-      CODE_SIGN_IDENTITY= SYMROOT=build OBJROOT=build
-  '';
+  swiftpmFlags = [ "--product swiftformat" ];
 
   installPhase = ''
-    install -D -m 0555 build/Release/swiftformat $out/bin/swiftformat
-  '';
-
-  sandboxProfile = ''
-    (allow file-read* file-write* process-exec mach-lookup)
-    ; block homebrew dependencies
-    (deny file-read* file-write* process-exec mach-lookup (subpath "/usr/local") (with no-log))
+    binPath="$(swiftpmBinPath)"
+    install -D -m 0555 $binPath/swiftformat $out/bin/swiftformat
   '';
 
   meta = with lib; {
@@ -39,7 +25,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/nicklockwood/SwiftFormat";
     license = licenses.mit;
     maintainers = [ maintainers.bdesham ];
-    platforms = platforms.darwin;
     hydraPlatforms = [];
   };
 }
