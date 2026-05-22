@@ -3,6 +3,7 @@
   lib,
   stdenv,
   buildPackages,
+  pkgsBuildHost,
   curl,
   openssl,
   zlib-ng,
@@ -221,6 +222,8 @@ stdenv.mkDerivation (finalAttrs: {
   // lib.attrsets.optionalAttrs (rustSupport && (stdenv.buildPlatform != stdenv.hostPlatform)) {
     # Rust cross-compilation
     CARGO_BUILD_TARGET = stdenv.hostPlatform.rust.rustcTargetSpec;
+    "CARGO_TARGET_${stdenv.hostPlatform.rust.cargoEnvVarTarget}_LINKER" = "${stdenv.cc.targetPrefix}cc";
+    "CARGO_TARGET_${stdenv.buildPlatform.rust.cargoEnvVarTarget}_LINKER" = "${pkgsBuildHost.stdenv.cc}/bin/${pkgsBuildHost.stdenv.cc.targetPrefix}cc";
   };
 
   configureFlags = [
