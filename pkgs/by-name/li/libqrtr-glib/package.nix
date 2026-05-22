@@ -11,6 +11,10 @@
   docbook-xsl-nons,
   docbook_xml_dtd_43,
   glib,
+  buildPackages,
+  withIntrospection ?
+    lib.meta.availableOn stdenv.hostPlatform gobject-introspection
+    && stdenv.hostPlatform.emulatorAvailable buildPackages,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -20,8 +24,8 @@ stdenv.mkDerivation (finalAttrs: {
   outputs = [
     "out"
     "dev"
-    "devdoc"
-  ];
+  ]
+  ++ lib.optional withIntrospection "devdoc";
 
   src = fetchFromGitLab {
     domain = "gitlab.freedesktop.org";
@@ -41,17 +45,24 @@ stdenv.mkDerivation (finalAttrs: {
     meson
     ninja
     pkg-config
+  ]
+  ++ lib.optionals withIntrospection [
     gobject-introspection
     gtk-doc
     docbook-xsl-nons
     docbook_xml_dtd_43
   ]
-  ++ lib.optionals (!stdenv.buildPlatform.canExecute stdenv.hostPlatform) [
+  ++ lib.optionals (withIntrospection && !stdenv.buildPlatform.canExecute stdenv.hostPlatform) [
     mesonEmulatorHook
   ];
 
   buildInputs = [
     glib
+  ];
+
+  mesonFlags = [
+    (lib.mesonBool "introspection" withIntrospection)
+    (lib.mesonBool "gtk_doc" withIntrospection)
   ];
 
   meta = {

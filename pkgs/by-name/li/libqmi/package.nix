@@ -76,8 +76,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   propagatedBuildInputs = [
     glib
-  ]
-  ++ lib.optionals withIntrospection [
     libqrtr-glib
   ];
 
@@ -88,7 +86,6 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.mesonBool "gtk_doc" withIntrospection)
     (lib.mesonBool "introspection" withIntrospection)
     (lib.mesonBool "man" withMan)
-    (lib.mesonBool "qrtr" withIntrospection)
     (lib.mesonBool "udev" withIntrospection)
   ];
 
