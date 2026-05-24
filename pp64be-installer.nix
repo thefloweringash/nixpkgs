@@ -1,8 +1,147 @@
-{ modulesPath, pkgs, lib, ... }: {
+{ modulesPath, config, pkgs, lib, ... }:
+let
+  # https://wiki.gentoo.org/wiki/GRUB_on_Open_Firmware_(PowerPC)
+  # Merged with nixos/modules/installer/cd-dvd/iso-image.nix
 
+  # Builds a single menu entry
+  menuBuilderGrub2 =
+    {
+      name,
+      class,
+      image,
+      params,
+      initrd,
+    }:
+    ''
+      menuentry '${name}' --class ${class} {
+        # Fallback to UEFI console for boot, efifb sometimes has difficulties.
+        terminal_output console
+
+        linux ${image} \''${isoboot} ${params}
+        initrd ${initrd}
+      }
+    '';
+
+  # Builds all menu entries
+  buildMenuGrub2 =
+    {
+      cfg ? config,
+      params ? [ ],
+    }:
+    let
+      menuConfig = {
+        name = lib.concatStrings [
+          cfg.isoImage.prependToMenuLabel
+          cfg.system.nixos.distroName
+          " "
+          cfg.system.nixos.label
+          cfg.isoImage.appendToMenuLabel
+          (lib.optionalString (cfg.isoImage.configurationName != null) (" " + cfg.isoImage.configurationName))
+        ];
+        params = "init=${cfg.system.build.toplevel}/init ${toString cfg.boot.kernelParams} ${toString params}";
+        image = "/boot/${cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile}";
+        initrd = "/boot/${cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile}";
+        class = "installer";
+      };
+    in
+    ''
+      ${lib.optionalString cfg.isoImage.showConfiguration (menuBuilderGrub2 menuConfig)}
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          specName:
+          { configuration, ... }:
+          buildMenuGrub2 {
+            cfg = configuration;
+            inherit params;
+          }
+        ) cfg.specialisation
+      )}
+    '';
+
+  grubImage = pkgs.runCommand "grub-image" {
+    nativeBuildInputs = [ pkgs.buildPackages.grub2 ];
+    grubConfig =
+      let
+        cfg = config;
+        # image = "/boot/${cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile}";
+        # initrd = "/boot/${cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile}";
+      in
+          # ${buildMenuGrub2 { }}
+        ''
+          set timeout=5
+          echo "Searching for root"
+          search --set=root --file /kernel
+          echo "root=$root"
+          echo "Loading kernel"
+          linux /kernel \''${isoboot} ${toString cfg.boot.kernelParams}
+          echo "Loading initrd"
+          initrd /initrd
+          echo "Booting"
+          boot
+        '';
+    passAsFile = [ "grubConfig" ];
+  }
+  ''
+    mkdir -p $out/grub
+
+    MODULES=(
+      # Basic modules for filesystems and partition schemes
+      "fat"
+      "ext2"
+      "iso9660"
+      "part_gpt"
+      "part_msdos"
+
+      # Basic stuff
+      "normal"
+      "boot"
+      "linux"
+      "configfile"
+      "loopback"
+      "halt"
+
+      # System commands
+      "search"
+      "search_label"
+      "search_fs_uuid"
+      "search_fs_file"
+      "echo"
+
+      # Graphical mode stuff
+      "gfxmenu"
+      "gfxterm"
+      "gfxterm_background"
+      "gfxterm_menu"
+      "test"
+      "loadenv"
+      "all_video"
+      "videoinfo"
+
+      # PowerMac specific things
+      "part_apple"
+      "hfs"
+      "hfsplus"
+      "hfspluscomp"
+    )
+
+    grub-mkimage \
+      --directory=${pkgs.grub2}/lib/grub/${pkgs.grub2.grubTarget} \
+      --prefix=/grub \
+      --output $out/grub/grub.img \
+      --format=powerpc-ieee1275 \
+      --config=$grubConfigPath \
+      ''${MODULES[@]}
+
+    cp ${pkgs.grub2}/share/grub/unicode.pf2 $out/grub/
+  '';
+in
+{
   imports = [
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
   ];
+
+  boot.kernelParams = [ "video=offb:off"  "nomodeset" ];
+  # boot.initrd.kernelModules = [ "nouveau" ]; 1.3gb!!!
 
   nixpkgs = {
     hostPlatform = "powerpc64-linux";
@@ -15,7 +154,7 @@
       in
         [
           (final: prev: {
-            grub = prev.grub.override { ieee1275support = true; efiSupport = false; };
+            grub2 = prev.grub2.override { ieee1275Support = true; efiSupport = false; };
             grub2_efi = final.emptyDirectory; # unconditional reference in iso-image.nix, in system.extraDependencies
 
             # Emulation of gobject-introspection is somtimes broken for reasons I don't understand.
@@ -58,5 +197,18 @@
   networking.networkmanager.enable = lib.mkForce false;
   networking.modemmanager.enable = lib.mkForce false;
 
+  # Super short, for ext2
+  isoImage.volumeID = "nixos";
+
+  isoImage.contents =
+    [
+      {
+        source = "${grubImage}/grub";
+        target = "/grub";
+      }
+    ];
+
   boot.loader.grub.efiSupport = false;
+
+  system.build.grubImage = grubImage;
 }
