@@ -70,12 +70,12 @@ let
         ''
           set timeout=5
           echo "Searching for root"
-          search --set=root --file /kernel
+          search --set=root --file /${cfg.system.boot.loader.kernelFile}
           echo "root=$root"
           echo "Loading kernel"
-          linux /kernel \''${isoboot} ${toString cfg.boot.kernelParams}
+          linux /${cfg.system.boot.loader.kernelFile} \''${isoboot} ${toString cfg.boot.kernelParams}
           echo "Loading initrd"
-          initrd /initrd
+          initrd /${cfg.system.boot.loader.initrdFile}
           echo "Booting"
           boot
         '';
@@ -140,7 +140,7 @@ in
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
   ];
 
-  boot.kernelParams = [ "video=offb:off"  "nomodeset" ];
+  boot.kernelParams = [ "nomodeset" ];
   # boot.initrd.kernelModules = [ "nouveau" ]; 1.3gb!!!
 
   nixpkgs = {
@@ -187,7 +187,31 @@ in
   # make[5]: *** [../scripts/Makefile.build:287: arch/powerpc/platforms/pseries/papr-hvpipe.o] Error 1
   # make[4]: *** [../scripts/Makefile.build:544: arch/powerpc/platforms/pseries] Error 2
   # make[4]: *** Waiting for unfinished jobs....
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_5_15;
+
+
+  # 5.10 failure message:
+  #   BOOTCC  arch/powerpc/boot/ofconsole.o
+  # In file included from ../arch/powerpc/boot/devtree.c:12:
+  # ../arch/powerpc/boot/types.h:43:13: error: 'bool' cannot be defined via 'typedef'
+  #    43 | typedef int bool;
+  #       |             ^~~~
+  # ../arch/powerpc/boot/types.h:43:13: note: 'bool' is a keyword with '-std=c23' onwards
+  # In file included from ../arch/powerpc/boot/ops.h:15,
+  #                  from ../arch/powerpc/boot/cuboot.c:12:
+  # ../arch/powerpc/boot/types.h:43:13: error: 'bool' cannot be defined via 'typedef'
+  #    43 | typedef int bool;
+  #       |             ^~~~
+  # ../arch/powerpc/boot/types.h:43:13: note: 'bool' is a keyword with '-std=c23' onwards
+  # ../arch/powerpc/boot/types.h:43:1: warning: useless type name in empty declaration
+  #    43 | typedef int bool;
+  #       | ^~~~~~~
+  # ../arch/powerpc/boot/types.h:43:1: warning: useless type name in empty declaration
+  #    43 | typedef int bool;
+  #       | ^~~~~~~
+  # make[2]: *** [../arch/powerpc/boot/Makefile:216: arch/powerpc/boot/cuboot.o] Error 1
+  # make[2]: *** Waiting for unfinished jobs....
 
   # Special IEEE1275 boot
   isoImage.makeEfiBootable = lib.mkForce false;
@@ -210,5 +234,16 @@ in
 
   boot.loader.grub.efiSupport = false;
 
+  boot.supportedFilesystems = [ "hfs" ];
+
   system.build.grubImage = grubImage;
+
+  system.build.usbboot = pkgs.symlinkJoin {
+    name = "usbboot";
+    paths = [
+      grubImage
+      config.boot.kernelPackages.kernel
+      config.system.build.initialRamdisk
+    ];
+  };
 }
