@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   mkMesonLibrary,
 
   nix-store-c,
@@ -23,6 +24,10 @@ mkMesonLibrary (finalAttrs: {
 
   mesonFlags = [
   ];
+
+  env = lib.optionalAttrs (stdenv.hostPlatform.isPower && stdenv.hostPlatform.is32bit) {
+    NIX_LDFLAGS = "-latomic";
+  };
 
   meta = {
     platforms = lib.platforms.unix ++ lib.platforms.windows;

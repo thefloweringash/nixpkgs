@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   mkMesonLibrary,
 
   openssl,
@@ -28,6 +29,10 @@ mkMesonLibrary (finalAttrs: {
       nix-store
       openssl
     ];
+
+  env = lib.optionalAttrs (stdenv.hostPlatform.isPower && stdenv.hostPlatform.is32bit) {
+    NIX_LDFLAGS = "-latomic";
+  };
 
   meta = {
     platforms = lib.platforms.unix ++ lib.platforms.windows;

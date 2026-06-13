@@ -38,6 +38,10 @@ mkMesonExecutable (finalAttrs: {
     (lib.mesonEnable "mimalloc" withMimalloc)
   ];
 
+  env = lib.optionalAttrs (stdenv.hostPlatform.isPower && stdenv.hostPlatform.is32bit) {
+    NIX_LDFLAGS = "-latomic";
+  };
+
   meta = {
     mainProgram = "nix";
     platforms = lib.platforms.unix ++ lib.platforms.windows;
