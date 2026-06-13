@@ -82,6 +82,12 @@ stdenv.mkDerivation (finalAttrs: {
       # entries in `linkarr_upb_AllExts` during test builds.
       # Context: https://github.com/protocolbuffers/protobuf/issues/21021
       ./fix-upb-linkarr-sentinel-init.patch
+    ]
+    ++ lib.optionals (lib.versionAtLeast version "32" && lib.versionOlder version "35") [
+      (fetchpatch {
+        url = "https://github.com/protocolbuffers/protobuf/commit/e9efe030ad31fc8a6ae6baca258260e8f3426778.patch";
+        hash = "sha256-DeqQY5M4etS3Z4mp1PG25FIvEBrSYN9KshVzaoKlWTc=";
+      })
     ];
 
   postPatch =
