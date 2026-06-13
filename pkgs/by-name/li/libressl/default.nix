@@ -134,6 +134,8 @@ in
     '';
     patches = [
       common-cmake-install-full-dirs-patch
+      ./ppc-means-powerpc.patch
+      ./powerpc-disable-arch.patch
     ];
   };
 
@@ -142,6 +144,8 @@ in
     hash = "sha256-bVwvWFg1iOp5H0yGRQBAcdAN+lVKW/eIoAbKHrWr1ws=";
     patches = [
       common-cmake-install-full-dirs-patch
+      ./ppc-means-powerpc.patch
+      ./powerpc-disable-arch.patch
     ];
   };
 }

@@ -1,0 +1,41 @@
+Only in libressl-4.2.1: CMakeFiles
+diff -ur libressl-4.2.1/crypto/arch/powerpc/crypto_arch.h libressl-4.2.1-fixed/crypto/arch/powerpc/crypto_arch.h
+--- libressl-4.2.1/crypto/arch/powerpc/crypto_arch.h	2025-10-08 01:05:59.000000000 +0900
++++ libressl-4.2.1-fixed/crypto/arch/powerpc/crypto_arch.h	2026-06-02 01:14:38.970973840 +0900
+@@ -20,6 +20,9 @@
+ 
+ #ifndef OPENSSL_NO_ASM
+ 
++// These aren't (TODO: why?)
++#if 0
++
+ #define HAVE_SHA1_BLOCK_DATA_ORDER
+ #define HAVE_SHA1_BLOCK_GENERIC
+ 
+@@ -28,4 +31,6 @@
+ 
+ #endif
+ 
++#endif
++
+ #endif
+diff -ur libressl-4.2.1/crypto/bn/arch/powerpc/bn_arch.h libressl-4.2.1-fixed/crypto/bn/arch/powerpc/bn_arch.h
+--- libressl-4.2.1/crypto/bn/arch/powerpc/bn_arch.h	2025-10-28 22:16:21.000000000 +0900
++++ libressl-4.2.1-fixed/crypto/bn/arch/powerpc/bn_arch.h	2026-06-02 01:12:10.579859697 +0900
+@@ -20,6 +20,9 @@
+ 
+ #ifndef OPENSSL_NO_ASM
+ 
++// These functions are not defined (TODO: why?)
++#if 0
++
+ #define HAVE_BN_ADD_WORDS
+ 
+ #define HAVE_BN_DIV_WORDS
+@@ -35,4 +38,6 @@
+ #define HAVE_BN_SUB_WORDS
+ 
+ #endif
++
++#endif
+ #endif
