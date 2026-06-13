@@ -27,4 +27,9 @@
     name = "request-key-helper";
     patch = ./request-key-helper.patch;
   };
+
+  ppc_array_bounds = {
+    name = "ppc-array-bounds";
+    patch = ./0001-powerpc-lib-Avoid-array-bounds-warnings-in-vec-ops.patch;
+  };
 }

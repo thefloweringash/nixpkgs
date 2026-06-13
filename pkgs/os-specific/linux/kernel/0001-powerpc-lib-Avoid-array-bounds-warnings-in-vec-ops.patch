@@ -1,0 +1,79 @@
+From df99da19c6c24ab65052ae1bc0904f99069478d9 Mon Sep 17 00:00:00 2001
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Tue, 21 Nov 2023 10:54:36 +1100
+Subject: [PATCH] powerpc/lib: Avoid array bounds warnings in vec ops
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Building with GCC with -Warray-bounds enabled there are several warnings
+in sstep.c along the lines of:
+
+  In function ‘do_byte_reverse’,
+      inlined from ‘do_vec_load’ at arch/powerpc/lib/sstep.c:691:3,
+      inlined from ‘emulate_loadstore’ at arch/powerpc/lib/sstep.c:3439:9:
+  arch/powerpc/lib/sstep.c:289:23: error: array subscript 2 is outside array bounds of ‘u8[16]’ {aka ‘unsigned char[16]’} [-Werror=array-bounds=]
+    289 |                 up[2] = byterev_8(up[1]);
+        |                 ~~~~~~^~~~~~~~~~~~~~~~~~
+  arch/powerpc/lib/sstep.c: In function ‘emulate_loadstore’:
+  arch/powerpc/lib/sstep.c:681:11: note: at offset 16 into object ‘u’ of size 16
+    681 |         } u = {};
+        |           ^
+
+do_byte_reverse() supports a size up to 32 bytes, but in these cases the
+caller is only passing a 16 byte buffer. In practice there is no bug,
+do_vec_load() is only called from the LOAD_VMX case in emulate_loadstore().
+That in turn is only reached when analyse_instr() recognises VMX ops,
+and in all cases the size is no greater than 16:
+
+  $ git grep -w LOAD_VMX arch/powerpc/lib/sstep.c
+  arch/powerpc/lib/sstep.c:                        op->type = MKOP(LOAD_VMX, 0, 1);
+  arch/powerpc/lib/sstep.c:                        op->type = MKOP(LOAD_VMX, 0, 2);
+  arch/powerpc/lib/sstep.c:                        op->type = MKOP(LOAD_VMX, 0, 4);
+  arch/powerpc/lib/sstep.c:                        op->type = MKOP(LOAD_VMX, 0, 16);
+
+Similarly for do_vec_store().
+
+Although the warning is incorrect, the code would be safer if it clamped
+the size from the caller to the known size of the buffer. Do that using
+min_t().
+
+Reported-by: Bagas Sanjaya <bagasdotme@gmail.com>
+Closes: https://lore.kernel.org/linuxppc-dev/YpbUcPrm61RLIiZF@debian.me/
+Reported-by: Jan-Benedict Glaw <jbglaw@lug-owl.de>
+Closes: https://lore.kernel.org/linuxppc-dev/20221212215117.aa7255t7qd6yefk4@lug-owl.de/
+Reported-by: "Gustavo A. R. Silva" <gustavo@embeddedor.com>
+Closes: https://lore.kernel.org/linuxppc-dev/6a8bf78c-aedb-4d5a-b0aa-82a51a17b884@embeddedor.com/
+Reviewed-by: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Build-tested-by: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Signed-off-by: Michael Ellerman <mpe@ellerman.id.au>
+Link: https://msgid.link/20231120235436.1569255-1-mpe@ellerman.id.au
+---
+ arch/powerpc/lib/sstep.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/powerpc/lib/sstep.c b/arch/powerpc/lib/sstep.c
+index a4ab8625061a..a13f05cfc7db 100644
+--- a/arch/powerpc/lib/sstep.c
++++ b/arch/powerpc/lib/sstep.c
+@@ -688,7 +688,7 @@ static nokprobe_inline int do_vec_load(int rn, unsigned long ea,
+ 	if (err)
+ 		return err;
+ 	if (unlikely(cross_endian))
+-		do_byte_reverse(&u.b[ea & 0xf], size);
++		do_byte_reverse(&u.b[ea & 0xf], min_t(size_t, size, sizeof(u)));
+ 	preempt_disable();
+ 	if (regs->msr & MSR_VEC)
+ 		put_vr(rn, &u.v);
+@@ -719,7 +719,7 @@ static nokprobe_inline int do_vec_store(int rn, unsigned long ea,
+ 		u.v = current->thread.vr_state.vr[rn];
+ 	preempt_enable();
+ 	if (unlikely(cross_endian))
+-		do_byte_reverse(&u.b[ea & 0xf], size);
++		do_byte_reverse(&u.b[ea & 0xf], min_t(size_t, size, sizeof(u)));
+ 	return copy_mem_out(&u.b[ea & 0xf], ea, size, regs);
+ }
+ #endif /* CONFIG_ALTIVEC */
+-- 
+2.52.0
+
