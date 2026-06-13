@@ -60,8 +60,54 @@ in
           ];
         };
 
+        linux_5_19 = callPackage ../os-specific/linux/kernel/mainline.nix {
+          branch = "5.19";
+          kernelPatches = [
+            kernelPatches.bridge_stp_helper
+            kernelPatches.request_key_helper
+            kernelPatches.ppc_array_bounds
+          ];
+        };
+
+        linux_6_0 = callPackage ../os-specific/linux/kernel/mainline.nix {
+          branch = "6.0";
+          kernelPatches = [
+            kernelPatches.bridge_stp_helper
+            kernelPatches.request_key_helper
+            kernelPatches.ppc_array_bounds
+          ];
+        };
+
         linux_6_1 = callPackage ../os-specific/linux/kernel/mainline.nix {
           branch = "6.1";
+          kernelPatches = [
+            kernelPatches.bridge_stp_helper
+            kernelPatches.request_key_helper
+          ];
+        };
+        linux_6_2 = callPackage ../os-specific/linux/kernel/mainline.nix {
+          branch = "6.2";
+          kernelPatches = [
+            kernelPatches.bridge_stp_helper
+            kernelPatches.request_key_helper
+          ];
+        };
+        linux_6_3 = callPackage ../os-specific/linux/kernel/mainline.nix {
+          branch = "6.3";
+          kernelPatches = [
+            kernelPatches.bridge_stp_helper
+            kernelPatches.request_key_helper
+          ];
+        };
+        linux_6_4 = callPackage ../os-specific/linux/kernel/mainline.nix {
+          branch = "6.4";
+          kernelPatches = [
+            kernelPatches.bridge_stp_helper
+            kernelPatches.request_key_helper
+          ];
+        };
+        linux_6_5 = callPackage ../os-specific/linux/kernel/mainline.nix {
+          branch = "6.5";
           kernelPatches = [
             kernelPatches.bridge_stp_helper
             kernelPatches.request_key_helper
@@ -660,7 +706,13 @@ in
     # recurse to build modules for the kernels
     linux_5_10 = recurseIntoAttrs (packagesFor kernels.linux_5_10);
     linux_5_15 = recurseIntoAttrs (packagesFor kernels.linux_5_15);
+    linux_5_19 = recurseIntoAttrs (packagesFor kernels.linux_5_19);
+    linux_6_0 = recurseIntoAttrs (packagesFor kernels.linux_6_0);
     linux_6_1 = recurseIntoAttrs (packagesFor kernels.linux_6_1);
+    linux_6_2 = recurseIntoAttrs (packagesFor kernels.linux_6_2);
+    linux_6_3 = recurseIntoAttrs (packagesFor kernels.linux_6_3);
+    linux_6_4 = recurseIntoAttrs (packagesFor kernels.linux_6_4);
+    linux_6_5 = recurseIntoAttrs (packagesFor kernels.linux_6_5);
     linux_6_6 = recurseIntoAttrs (packagesFor kernels.linux_6_6);
     linux_6_12 = recurseIntoAttrs (packagesFor kernels.linux_6_12);
     linux_6_18 = recurseIntoAttrs (packagesFor kernels.linux_6_18);

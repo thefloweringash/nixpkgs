@@ -1257,8 +1257,13 @@ mapAliases {
   linuxPackages_5_10_hardened = throw "linux_hardened on nixpkgs only contains latest stable and latest LTS"; # Added 2025-08-10
   linuxPackages_5_15 = linuxKernel.packages.linux_5_15;
   linuxPackages_5_15_hardened = throw "linux_hardened on nixpkgs only contains latest stable and latest LTS"; # Added 2025-08-10
+  linuxPackages_6_0 = linuxKernel.packages.linux_6_0;
   linuxPackages_6_1 = linuxKernel.packages.linux_6_1;
   linuxPackages_6_1_hardened = throw "linux_hardened on nixpkgs only contains latest stable and latest LTS"; # Added 2025-08-10
+  linuxPackages_6_2 = linuxKernel.packages.linux_6_2;
+  linuxPackages_6_3 = linuxKernel.packages.linux_6_3;
+  linuxPackages_6_4 = linuxKernel.packages.linux_6_4;
+  linuxPackages_6_5 = linuxKernel.packages.linux_6_5;
   linuxPackages_6_6 = linuxKernel.packages.linux_6_6;
   linuxPackages_6_6_hardened = throw "linux_hardened on nixpkgs only contains latest stable and latest LTS"; # Added 2025-08-10
   linuxPackages_6_12 = linuxKernel.packages.linux_6_12;
