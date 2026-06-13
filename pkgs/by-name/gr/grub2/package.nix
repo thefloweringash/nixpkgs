@@ -64,6 +64,7 @@ let
 
   ieee1275SystemsBuild = {
     x86_64-linux.target = "i386";
+    powerpc-linux.target = "powerpc";
     powerpc64-linux.target = "powerpc";
   };
 
