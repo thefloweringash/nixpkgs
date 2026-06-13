@@ -38,7 +38,10 @@ stdenv.mkDerivation rec {
   makeFlags =
     commonMakeFlags
     ++ [
-      "KLIBCARCH=${if stdenv.hostPlatform.isRiscV64 then "riscv64" else stdenv.hostPlatform.linuxArch}"
+      "KLIBCARCH=${if stdenv.hostPlatform.isRiscV64 then "riscv64"
+                   else if stdenv.hostPlatform.isPower && stdenv.hostPlatform.is32bit then "ppc"
+                   else if stdenv.hostPlatform.isPower && stdenv.hostPlatform.is64bit then "ppc64"
+                   else stdenv.hostPlatform.linuxArch}"
       "KLIBCKERNELSRC=${linuxHeaders}"
     ]
     # TODO(@Ericson2314): We now can get the ABI from
