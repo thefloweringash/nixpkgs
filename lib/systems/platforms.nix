@@ -43,6 +43,10 @@ rec {
       baseConfig = "ppc64_defconfig";
       target = "vmlinux";
       autoModules = true;
+      extraConfig = ''
+        DRM_OFDRM n
+        FB_OF y
+      '';
     };
   };
 
