@@ -36,6 +36,20 @@ rec {
     };
   };
 
+  ppc = {
+    linux-kernel = {
+      name = "powerpc";
+
+      baseConfig = "pmac32_defconfig";
+      target = "vmlinux";
+      autoModules = true;
+      extraConfig = ''
+        DRM_OFDRM n
+        FB_OF y
+      '';
+    };
+  };
+
   ppc64 = {
     linux-kernel = {
       name = "powerpc64";
@@ -635,6 +649,9 @@ rec {
 
     else if platform.isPower64 then
       if platform.isLittleEndian then powernv else ppc64
+
+    else if platform.isPower then
+      if platform.isLittleEndian then throw "what" else ppc
 
     else if platform.isSh4 then
       {
